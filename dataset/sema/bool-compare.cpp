@@ -93,11 +93,11 @@ void f(int x, int y, int z){
   if (-1 > (a<y)) {} // expected error: Binary operator request for the same type
   if((y==z)<(z==x)){} // accepted
 
-  if(((z==x)<(-1==z))!=(x<y)){} // accepted
-  if(((z==x)<(z==-1))!=(x<y)){} // accepted
-  if(((z==x)<-1)!=(x<y)){} // accepted
-  if(((z==x)< 2)!=(x<y)){} // accepted
-  if(((z==x)<(z>2))!=(x<y)){} // accepted
+  if(((z==x)<(-1==z))!=(x<y)){} // expected error: Binary operator request for the same type
+  if(((z==x)<(z==-1))!=(x<y)){} // expected error: Binary operator request for the same type
+  if(((z==x)<-1)!=(x<y)){} // expected error: Binary operator request for the same type
+  if(((z==x)< 2)!=(x<y)){} // expected error: Binary operator request for the same type
+  if(((z==x)<(z>2))!=(x<y)){} // expected error: Binary operator request for the same type
 }
 
 int main(){
