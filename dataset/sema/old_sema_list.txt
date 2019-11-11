@@ -89,7 +89,7 @@ testcase_726.txt
 testcase_727.txt
 testcase_728.txt
 testcase_729.txt
-testcase_730.txt
+testcase_730.txt (del)
 testcase_731.txt
 testcase_732.txt
 testcase_733.txt

@@ -7,4 +7,4 @@ File: Compiler 2020 Manual-v2.pdf
 - Add condition testkit 1
      
 Semantic Testset 1:   
-Sema->678   
+Sema->710   

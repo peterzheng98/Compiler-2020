@@ -1,0 +1,17 @@
+/*
+Test Package: Sema_Local_Preview
+Test Target: Basic
+Author: 16' Yikai Li
+Time: 2019-11-11
+Verdict: Success
+Origin Package: Semantic Pretest
+*/
+class Array{
+    int size(){
+    }
+}
+
+int main(){
+    Array a = null;
+    a.size();
+}
