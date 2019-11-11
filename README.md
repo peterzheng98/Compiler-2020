@@ -1,10 +1,7 @@
 ## Compiler 2020
 
-### Stage: Manual v2, Testset v0.1
-File: Compiler 2020 Manual-v2.pdf     
-- Add ++ and -- operator
-- Fixed some bugs
-- Add condition testkit 1
+### Stage: Manual v2, Testset v0.2A
+File: Compiler 2020 Manual-v3.pdf     
+- Fixed many bugs
      
-Semantic Testset 1:   
-Sema->710   
+Semantic Testset: Current 169
