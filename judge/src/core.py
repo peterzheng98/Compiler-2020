@@ -9,11 +9,59 @@ import pymysql.cursors
 import pymysql
 import os
 import shutil
-
+import time
+import subprocess
 
 C = docker.from_env()
 sqlConnector = None
 sqlCursor = None
+localdataVersion = None
+
+def updateRepo(userCompilerLocalPath: str, lastHash: tuple, repoPath: str, uuid: str):
+    cmd = ''
+    if lastHash[0] != 1: # no previous build or error occurred
+        cmd = 'rm -rf * && git init && git remote add origin %s && git pull origin master' % repoPath
+    else:
+        archiveFileName = '%s.zip' % lastHash[1]
+        backupPath = Config_Dict['compilerBackupPath'] + '/' + uuid + '/'
+        cmd = 'zip -9 -r %s . && cp %s %s && rm %s && git pull -f' % (archiveFileName, archiveFileName, backupPath, archiveFileName)
+    try:
+        commandResult = subprocess.Popen(cmd, cwd=userCompilerLocalPath, shell=True)
+        
+    except expression as identifier:
+        pass
+
+
+def checkValidWorkList(worklist: list):
+    for work in worklist:
+        if not 'uuid' in work.items():
+            return False
+        if not 'repo' in work.items():
+            return False
+        if not 'testcase' in work.items():
+            return False
+        if not 'stage' in work.items():
+            return False
+    return True
+
+
+def getGitHash(pathORurl: str):
+    '''
+    Input: path
+    Returns: Tuple<int, str> -> int: 1 Success 2 Error
+    '''
+    gitcmd = 'git ls-remote %s | grep heads/master' % pathORurl
+    version = []
+    try:
+        version = subprocess.check_output(gitcmd, shell=True, timeout=Config_Dict['GitTimeout']).decode().strip().split('\t')
+        if len(version[0]) != 40:
+            return (2, 'Length error, received [%s] with raw [%s]' % (version[0], '\t'.join(version)))
+        return (1, version[0])
+    except subprocess.TimeoutExpired as identifier:
+        return (2, 'Git Timeout: %s' % identifier)
+    except Exception as identifier:
+        return (2, 'Exception: %s' % identifier)
+    
 
 def makeContainer(dockerfilePath: str, imageName: str):
     try:
@@ -60,12 +108,19 @@ def updateUserList(userlist_Dict: dict):
         genLog('(UpdateUser)    Modification SQL Comannd: %s' % (sqlCommand % (i[1], i[0])))
         sqlCursor.execute(sqlCommand % (i[1], i[0]))
         uuid = i[0]
-        if not os.path.exists(Config_Dict['dataPath'] + '/' + uuid):
-            os.makedirs(Config_Dict['dataPath'] + '/' + uuid)
+        if not os.path.exists(Config_Dict['compilerPath'] + '/' + uuid):
+            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
         else:
-            shutil.rmtree(Config_Dict['dataPath'] + '/' + uuid)
+            shutil.rmtree(Config_Dict['compilerPath'] + '/' + uuid)
             genLog('(UpdateUser)     Folder with uuid %s not null, remove it and create an empty one.' % uuid)
-            os.makedirs(Config_Dict['dataPath'] + '/' + uuid)
+            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
+
+        if not os.path.exists(Config_Dict['compilerBackupPath'] + '/' + uuid):
+            os.makedirs(Config_Dict['compilerBackupPath'] + '/' + uuid)
+        else:
+            shutil.rmtree(Config_Dict['compilerBackupPath'] + '/' + uuid)
+            genLog('(UpdateUser)     Folder(Backup) with uuid %s not null, remove it and create an empty one.' % uuid)
+            os.makedirs(Config_Dict['compilerBackupPath'] + '/' + uuid)
         sqlConnector.commit()
     for i in insertList:
         genLog('(UpdateUser) Insertion: %s' % i)
@@ -134,7 +189,7 @@ if __name__ == '__main__':
     print('Preparation: Fetch the user repo list')
     genLog('Preparation: Fetch the user repo list')
     ## Fetch the user repo list and update 
-    url = Config_Dict['server'] + Config_Dict['serverFetchUser']
+    url = Config_Dict['serverFetchUser']
     r = requests.get(url)
     userlist_Dict = r.json()
     print('  User list fetched, %d records.' % (len(userList)))
@@ -159,6 +214,58 @@ if __name__ == '__main__':
             print('Make base container failed, check the output log')
             exit(0)
     genLog('  Generating Image Templates')
-    with open(Config_Dict['dockerfilepath'] + 'template.dockerfile', 'r') as f:
-        f.write('FROM %s\nADD compiler /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (Config_Dict['dockerprefix'] + 'base'))
+    with open(Config_Dict['dockerfilepath'] + 'template.dockerfile', 'w') as f:
+        f.write('FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (Config_Dict['dockerprefix'] + 'base', Config_Dict['compilerPath']))
+
+    print('Ready to judge')
+    while True:
+        r = None
+        try:
+            time.sleep(1)
+            r = requests.get(Config_Dict['serverFetchTask'], timeout=10)
+            r.raise_for_status()
+            task_Dict = r.json()
+            if task_Dict['code'] == 1: # 1 for sleep
+                genLog('  Nothing can be done currently.')
+                continue
+            if task_Dict['code'] == 2:
+                genLog(' Accept work %s, contains %d subwork.' % (task_Dict['workid'], len(task_Dict['target'])))
+                subtask_List = task_Dict['target']
+                # Assert whether the data is valid
+                validresult_Bool = checkValidWorkList(subtask_List)
+                if not validresult_Bool:
+                    # TODO: return false result
+                    continue
+                for subtask_dict in subtask_List:
+                    genLog('(Judge)  Judging: uuid:%s, repo:%s, stage:%d' % (subtask_dict['uuid'], subtask_dict['repo'], subtask_dict['stage']))
+                    userCompilerPath = Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']
+                    # Check the hash value
+                    # 1. get local hash
+                    hashResultLocal = getGitHash(userCompilerPath)
+                    # 2. get remote hash
+                    hashResultRemote = getGitHash(subtask_dict['repo'])
+                    hashMatched = (hashResultLocal[0] == 1 and hashResultRemote[0] == 1 and hashResultLocal[1] == hashResultRemote[1])
+                    genLog('(Judge)    Judging:local:%s, remote:%s, matched:%s' % (hashResultLocal, hashResultRemote, hashMatched))
+                    # if not matched -> save a duplicated copy of the last version
+                    # this is a todo function
+                    # not matched: update the repo
+                    if not hashMatched:
+                        updateRepo(userCompilerPath, hashResultLocal)
+
+                
+
+
+        except requests.exceptions.ConnectTimeout as identifier:
+            print('  -> Connection Timeout with %s, retrying' % identifier)
+            genLog('  Connection Timeout with %s' % identifier)
+            continue
+            pass
+        except requests.exceptions.HTTPError as identifier:
+            print('  -> HTTP Error with %s, exiting' % identifier)
+            genLog('   HTTP Error with %s' % identifier)
+            exit(0)
+        except Exception as identifier:
+            print('  Unknown Error occurred with %s' % identifier)
+            genLog('   UnknownError: %s' % identifier)
+            continue
     
