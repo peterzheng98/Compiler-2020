@@ -1,6 +1,6 @@
 ## Compiler 2020
 
-### Stage: Manual v2, Testset v0.2A
+### Stage: Manual v2, Testset v0.2A + Judge Server In progress
 File: Compiler 2020 Manual-v3.pdf     
 - Fixed many bugs
      
