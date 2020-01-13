@@ -8,7 +8,7 @@ Comment: condition cannot be non-bool objects
 Origin Package: Semantic Pretest
 */
 
-class A { int a; }
+class A { int a; };
 
 int main() {
     A a = new A;

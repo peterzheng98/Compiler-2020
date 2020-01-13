@@ -17,5 +17,5 @@ class A{
     void fun() {
     	 a = c;
     }
-}
+};
 

@@ -8,7 +8,7 @@ Origin Package: Semantic Pretest
 */
 class experience {
     int naive;
-}
+};
 int main() {
     if (true)
       if (true)

@@ -11,7 +11,7 @@ class A{
 	A()
 	{
 	}
-}
+};
 int B()
 {
 	int c;

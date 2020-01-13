@@ -22,7 +22,7 @@ class sometimes {
 	void make_money() {
 		this.naive++;
 	}
-}
+};
 int main() {
     sometimes naive = null;
     print(toString(

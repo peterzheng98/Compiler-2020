@@ -16,7 +16,7 @@ class A
 	{
 		this.b = b;
 	}
-}
+};
 int main()
 {
 }

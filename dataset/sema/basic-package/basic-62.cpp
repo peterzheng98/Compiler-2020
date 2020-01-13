@@ -6,7 +6,7 @@ Time: 2019-11-11
 Verdict: Success
 Origin Package: Semantic Pretest
 */
-class A{int a;}
+class A{int a;};
 A foo(){
    return new A();
 }

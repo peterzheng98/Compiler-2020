@@ -9,7 +9,7 @@ Origin Package: Semantic Extended
 */
 class Foo {
     int young;
-}
+};
 
 int main() {
     Foo chairman = new Foo;

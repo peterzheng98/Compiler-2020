@@ -40,7 +40,7 @@ class A
 	}
 	C[][] c;
 	int idx;
-}
+};
 
 class B
 {
@@ -51,7 +51,7 @@ class B
 		idx = countB++;
 		c = (new A).getc0()[0].Me().Me();
 	}
-}
+};
 
 class C
 {
@@ -64,7 +64,7 @@ class C
 	}
 	C Me() { return this; }
 	string str;
-}
+};
 
 void count()
 {

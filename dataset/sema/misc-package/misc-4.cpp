@@ -27,7 +27,7 @@ class ClassA{
 	string getString(){
 		return str;
 	}
-}
+};
 int Main(int parameter){
 	ClassA a = new ClassA;
 	ClassA b = a.getClassA(parameter);

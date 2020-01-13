@@ -94,7 +94,7 @@ class vector{
 		}
 		return true;
 	}
-}
+};
 
 int main(){
 	vector x = new vector;

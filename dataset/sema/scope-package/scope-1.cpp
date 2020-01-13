@@ -16,7 +16,7 @@ class C{
         {int x;}
     }
     void x(){}
-}
+};
 int main(){
     string x = "789dcbadcba\n";
     int y;

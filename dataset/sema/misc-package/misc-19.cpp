@@ -11,11 +11,11 @@ class Mo{
 	int ang;
 	int sec;
 	string world;
-}
+};
 
 class RedBoy{
 	int num;
-}
+};
 
 //global delc
 int age = 1000000;

@@ -40,7 +40,7 @@ class lnode {
         ptag = 0;
         mtag = 1;
     }
-}
+};
 
 lnode[][] ltree = new lnode[maxr][4 * maxc];
 int[][] matrix = new int[maxr][maxc];

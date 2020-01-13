@@ -7,7 +7,7 @@ Verdict: Success
 Origin Package: Semantic Extended
 */
 void AA() {}
-class B {}
+class B {};
 int main() {
 	int A;
 	B C = new B;

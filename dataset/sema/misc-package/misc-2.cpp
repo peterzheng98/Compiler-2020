@@ -47,7 +47,7 @@ class Minamoto_Yorimitsu{
 			np = 0;
 		}else println("Attack");
 	}
-}
+};
 int main(){
 	// testcomment_"\n\\\"\njkjkblsd"
 	int n = getInt();

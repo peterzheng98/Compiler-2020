@@ -15,7 +15,7 @@ class A
 	{
 		a = b;
 	}
-}
+};
 
 int main()
 {

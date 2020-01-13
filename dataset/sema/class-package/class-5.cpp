@@ -12,13 +12,13 @@ class Cat{
 	void greet(){
 		println("MIAOMIAOMIAO");
 	}
-}
+};
 
 class Lamb{
 	void greet(){
 		println("MIEMIEMIE");
 	}
-}
+};
 
 class Animals{
 	Cat c;
@@ -31,7 +31,7 @@ class Animals{
 		c.greet();
 		l.greet();
 	}
-}
+};
 
 int main(){
 	Cat cat;

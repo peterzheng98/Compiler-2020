@@ -9,7 +9,7 @@ Origin Package: Semantic Pretest
 */
 class AI {
     int a;
-}
+};
 
 int f(int a, int b)
 {

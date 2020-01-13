@@ -14,7 +14,7 @@ class x
     {
         x=1;
     }
-}
+};
 x x(x a)
 {
     return a;

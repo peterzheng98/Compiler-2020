@@ -10,7 +10,7 @@ string a = "\n\n\n\"\\\"";
 
 class A {
     bool b;
-}
+};
 
 int main() {
     println(a + " " + a);

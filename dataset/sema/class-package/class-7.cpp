@@ -26,4 +26,4 @@ class CLASS
 	CLASS a;
 	CLASS b;
 	int c;
-}
+};

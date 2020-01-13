@@ -1,7 +1,7 @@
 /*
 Test Package: Sema_Local_Preview
 Test Target: Basic
-Author: 10' Youer Pu
+Author: Pikachu
 Time: 2019-11-11
 Verdict: Fail
 Comment: Function cannot be lvalue.
@@ -11,10 +11,14 @@ class A {
     int x;
     int y;
     int z;
+};
+
+int f(){
+    return 1;
 }
 
 int main() {
     int t;
     A x;
-    t = x;
+    f() = x;
 }

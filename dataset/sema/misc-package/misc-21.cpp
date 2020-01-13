@@ -10,10 +10,10 @@ int Wallace = 1<<10;
 class sometimes {
     int naive;
     string haha;
-}
+};
 class ArrayWrapper {
     sometimes[][] arr;
-}
+};
 int get(int n) {
     if (n == 0) return 0;
     return 1 + get(n-1);

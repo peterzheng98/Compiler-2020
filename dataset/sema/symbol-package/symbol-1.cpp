@@ -13,7 +13,7 @@ class A{
 	int aabc(int abc) {
 		return abc;
 	}
-}
+};
 
 class B {
 	B(){
@@ -27,11 +27,11 @@ class B {
 	void t() {
 		this.D();
 	}
-}
+};
 
 class f{
 	
-}
+};
 
 int main() {
 	int [  ] ff = new int[1 ];

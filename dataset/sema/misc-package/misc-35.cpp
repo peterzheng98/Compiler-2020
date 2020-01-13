@@ -12,11 +12,11 @@ int main() {
 }
 class A{
 	B a;
-}
+};
 class B{
 	C b;
-}
+};
 class C{
 	string s;
-}
+};
 

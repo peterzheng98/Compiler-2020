@@ -9,12 +9,12 @@ Origin Package: Semantic Pretest
 */
 class A {
     int x;
-}
+};
 
 class A {
     int x;
     int y;
-}
+};
 
 int main() {
 }

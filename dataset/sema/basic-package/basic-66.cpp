@@ -14,7 +14,7 @@ class A
     {
         return foo.g().foo;
     }
-}
+};
 
 int main()
 {

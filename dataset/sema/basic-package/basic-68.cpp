@@ -17,7 +17,7 @@ class A{
     A pf(){
         return alt.af();
     }
-}
+};
 
 int main()
 {

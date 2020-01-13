@@ -17,8 +17,20 @@ sqlConnector = None
 sqlCursor = None
 localdataVersion = None
 
+def existImage(imageName):
+    try:
+        C.images.get(imageName)
+        return True
+    except docker.errors.ImageNotFound as identifier:
+        return False
+    except Exception:
+        return False
+    
+
 def updateRepo(userCompilerLocalPath: str, lastHash: tuple, repoPath: str, uuid: str):
     cmd = ''
+    commandResult = None
+    timeout = Config_Dict['GitTimeout'] * 4
     if lastHash[0] != 1: # no previous build or error occurred
         cmd = 'rm -rf * && git init && git remote add origin %s && git pull origin master' % repoPath
     else:
@@ -26,10 +38,21 @@ def updateRepo(userCompilerLocalPath: str, lastHash: tuple, repoPath: str, uuid:
         backupPath = Config_Dict['compilerBackupPath'] + '/' + uuid + '/'
         cmd = 'zip -9 -r %s . && cp %s %s && rm %s && git pull -f' % (archiveFileName, archiveFileName, backupPath, archiveFileName)
     try:
-        commandResult = subprocess.Popen(cmd, cwd=userCompilerLocalPath, shell=True)
-        
-    except expression as identifier:
+        commandResult = subprocess.Popen(cmd, cwd=userCompilerLocalPath, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+        start_time = time.time()
+        while True:
+            if commandResult.poll() is not None:
+                break
+            seconds_passed = time.time() - t_beginning 
+            if timeout and seconds_passed > timeout: 
+                commandResult.terminate() 
+                raise Exception()
+            time.sleep(0.1) 
+    except Exception as identifier:
+        return (1, "Timeout")
         pass
+    return (0, commandResult.stdout.read().decode())
+
 
 
 def checkValidWorkList(worklist: list):
@@ -126,12 +149,12 @@ def updateUserList(userlist_Dict: dict):
         genLog('(UpdateUser) Insertion: %s' % i)
         uuid = i[0]
         ## make dir for the user.
-        if not os.path.exists(Config_Dict['dataPath'] + '/' + uuid):
-            os.makedirs(Config_Dict['dataPath'] + '/' + uuid)
+        if not os.path.exists(Config_Dict['compilerPath'] + '/' + uuid):
+            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
         else:
-            shutil.rmtree(Config_Dict['dataPath'] + '/' + uuid)
+            shutil.rmtree(Config_Dict['compilerPath'] + '/' + uuid)
             genLog('(UpdateUser)     Folder with uuid %s not null, remove it and create an empty one.' % uuid)
-            os.makedirs(Config_Dict['dataPath'] + '/' + uuid)
+            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
         sqlCommand = 'INSERT INTO userInfo (uuid, repo, lastBuild, status) VALUES (\'%s\', \'%s\', \'1970-01-01 00:00:00\' \'No previous build\')'
         genLog('(UpdateUser)    Insertion SQL Comannd: %s' % (sqlCommand % i))
         sqlCursor.execute(sqlCommand % (i[0], i[1]))
@@ -213,9 +236,9 @@ if __name__ == '__main__':
             genLog(result[1])
             print('Make base container failed, check the output log')
             exit(0)
-    genLog('  Generating Image Templates')
-    with open(Config_Dict['dockerfilepath'] + 'template.dockerfile', 'w') as f:
-        f.write('FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (Config_Dict['dockerprefix'] + 'base', Config_Dict['compilerPath']))
+    # genLog('  Generating Image Templates')
+    # with open(Config_Dict['dockerfilepath'] + 'template.dockerfile', 'w') as f:
+    #     f.write('FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (Config_Dict['dockerprefix'] + 'base', Config_Dict['compilerPath']))
 
     print('Ready to judge')
     while True:
@@ -250,7 +273,34 @@ if __name__ == '__main__':
                     # this is a todo function
                     # not matched: update the repo
                     if not hashMatched:
-                        updateRepo(userCompilerPath, hashResultLocal)
+                        updateRepo(userCompilerPath, hashResultLocal, subtask_dict['repo'], subtask_dict['uuid'])
+                    # Matched -> check whether the image exists
+                    # Not matched -> build images
+                    # dockerimage:uuid[0:8] + hash[0:8]
+                    imageName = Config_Dict['dockerprefix'] + subtask_dict['uuid'] + '_' + hashResultRemote[1]
+                    if (not hashMatched) or (not existImage(imageName)):
+                        # copy files to temporary
+                        _ = subprocess.Popen('mkdir temp && cp %s/* temp/')
+                        try:
+                            with open('temp/Dockerfile', 'w') as f:
+                                f.write('FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (Config_Dict['dockerprefix'] + 'base', Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']))
+                            image_built = C.images.build(path='./temp/', rm=True, tag=imageName)
+                        except docker.errors.BuildError as identifier:
+                            genLog('(Judge-Build)  Built Error occurred. target:%s -> %s' % (subtask_dict, identifier))
+                            continue
+                        except Exception as identifier:
+                            genLog('(Judge-Build)  Unknown Error occurred. target:%s -> %s' % (subtask_dict, identifier))
+                            continue
+                        shutil.rmtree('./temp')
+                        genLog('(Judge-Build)  built finished. target:%s' % subtask_dict)
+                        # Check whether the images exists.
+                        if existImage(imageName):
+                            genLog('(Judge-Build)  check existed = ok, name = %s' % imageName)
+                        else:
+                            genLog('(Judge-Build)  check existed = failed, name = %s' % imageName)
+                    # build image finish
+                    
+                    
 
                 
 

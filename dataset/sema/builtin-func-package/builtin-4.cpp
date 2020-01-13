@@ -9,7 +9,7 @@ Origin Package: Semantic Pretest
 */
 
 class Array{
-}
+};
 
 int main(){
     Array a = null;

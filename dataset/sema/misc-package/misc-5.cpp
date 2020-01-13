@@ -15,11 +15,11 @@ class testClass1
 	{
 		return 0;
 	}
-}
+};
 class testClass2
 {
 	testClass1 obj;
-}
+};
 int max(int a,int b)
 {
 	if(a>b) return a;

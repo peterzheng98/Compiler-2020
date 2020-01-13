@@ -13,6 +13,6 @@ class A {
     A() {
         return get(); // cannot return any value in a constructor
     }
-}
+};
 
 int main() { return 0; }

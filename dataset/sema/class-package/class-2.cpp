@@ -29,7 +29,7 @@ class naive
         println("news.learnmore");
     }
 
-}
+};
 
 class interesting
 {
@@ -42,7 +42,7 @@ class interesting
         learnmore = "+1s";
         second = learnmore.length() + second;
      }
-}
+};
 
 int main()
 {

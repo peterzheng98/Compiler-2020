@@ -9,16 +9,16 @@ Origin Package: Semantic Pretest
 class A
 {
 	C c;
-}
+};
 class B
 {
 	C c;
-}
+};
 class C
 {
 	int a;
 	string b;
-}
+};
 int main()
 {
 	A a = new A;

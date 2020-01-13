@@ -22,7 +22,7 @@ class Node
         }
 		return this;
     }
-}
+};
 Node[] a = new Node[723];
 Node[] b = null;
 string str = "19asdojkhkj1";

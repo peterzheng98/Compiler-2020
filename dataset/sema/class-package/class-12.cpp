@@ -9,11 +9,11 @@ Origin Package: Semantic Extended
 */
 class A {
   B() {}
-}
+};
 
 class B {
   A() {}
-}
+};
 
 int main() {
   A b = new A;

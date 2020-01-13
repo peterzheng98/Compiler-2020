@@ -11,14 +11,14 @@ class A {
   A() {
     t = new B();
   }
-}
+};
 
 class B {
   A t;
   B() {
     t = new A();
   }
-}
+};
 
 int main() {
   A a = new A;

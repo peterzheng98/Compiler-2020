@@ -60,7 +60,7 @@ class Test{
 				println("");
 			}
 	}
-}
+};
 
 int main() {
 	n = getInt();

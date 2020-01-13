@@ -17,7 +17,7 @@ class AAA {
         print(str);
         print(toString(str.length()));
     }
-}
+};
 
 class BBB {
     AAA a;
@@ -25,7 +25,7 @@ class BBB {
     BBB() {
         a.str = a.str + "1234567890";
     }
-}
+};
 
 int main() {
     int a;

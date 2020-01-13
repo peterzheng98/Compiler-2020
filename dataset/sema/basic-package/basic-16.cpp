@@ -10,7 +10,7 @@ Origin Package: Semantic Extended
 class A {
     int f;
     bool f;
-}
+};
 
 int main() {
     return 0;

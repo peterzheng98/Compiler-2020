@@ -50,7 +50,7 @@ class E {
     E getSelf() {
         return this;
     }
-}
+};
 
 void bad_func_3() {
     while (true && false || !true) {

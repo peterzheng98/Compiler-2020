@@ -8,7 +8,7 @@ Comment: Class B is not defined.
 Origin Package: Semantic Pretest
 */
 class A{
-}
+};
 int main(){
 A a = new B();
 }

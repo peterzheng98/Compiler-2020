@@ -23,7 +23,7 @@ class A {
             string b = a;
         }
     }
-}
+};
 int main() {
     A a = new A();
 	println("too young too simple.");

@@ -14,7 +14,7 @@ class b{
         this.a = a;
     }
     int a;
-}
+};
 
 int main(){
     return 0;

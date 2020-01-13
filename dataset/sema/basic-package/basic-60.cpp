@@ -17,7 +17,7 @@ int main() {
 class A {
 	int [] v = new int[3];
 	B b;
-}
+};
 class B {
 	A a;
-}
+};

@@ -9,7 +9,7 @@ Origin Package: Semantic Pretest
 */
 class main{
 
-}
+};
 int main() {
     int a = (new int[])[1];
 }

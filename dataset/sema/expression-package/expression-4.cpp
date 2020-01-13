@@ -14,7 +14,7 @@ class testret
     {
 	name = 2;
     }
-}
+};
 testret ret_const()
 {
     testret r = new testret;

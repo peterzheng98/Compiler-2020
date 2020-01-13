@@ -47,7 +47,7 @@ class point {
 	void printPoint() {
 		println("(" + toString(x) + ", " + toString(y) + ", " + toString(z) + ")");
 	}
-}
+};
 
 int main() {
 	point a;

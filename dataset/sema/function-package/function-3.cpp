@@ -12,7 +12,7 @@ class A {
     int x;
     int y;
     int z;
-}
+};
 
 A f() {
     int a;

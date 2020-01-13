@@ -17,7 +17,7 @@ class moment_ring
 		this.singers = new string[9];
 		lryics = "kii te yo ima no kimochi wa\nsouda na souda na katari kirenai\n...";
 	}
-}
+};
 
 int depth;
 
@@ -47,7 +47,7 @@ class test
 		this.txt = t.txt;
 		return t;
 	}
-}
+};
 
 int main()
 {

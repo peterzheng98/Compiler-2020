@@ -13,7 +13,7 @@ class A{
        b = a; 
     }
     int b;
-}
+};
 
 
 int main(){

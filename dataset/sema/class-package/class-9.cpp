@@ -26,7 +26,7 @@ class A {
     A[][] many() {
         return new A[10][10];
     }
-}
+};
 
 class B {
     A a;
@@ -37,4 +37,4 @@ class B {
     B[][] many() {
         return new B[10][10];
     }
-}
+};

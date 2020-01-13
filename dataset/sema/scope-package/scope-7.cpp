@@ -10,7 +10,7 @@ Origin Package: Semantic Extended
 // scope recover
 class A {
     int a;
-}
+};
 int main() {
 	int x = 1;
 	{

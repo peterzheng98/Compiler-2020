@@ -12,5 +12,5 @@ class A {
     void this() {  // "this" is a reserved word
         return;
     }
-}
+};
 int main() {}

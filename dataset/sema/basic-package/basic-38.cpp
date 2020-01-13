@@ -10,8 +10,7 @@ Origin Package: Semantic Pretest
 class int
 {
 int a;
-
-}
+};
 int main()
 {
 ;;;;;;;;

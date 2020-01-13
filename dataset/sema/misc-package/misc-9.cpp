@@ -31,7 +31,7 @@ class Fibonacci{
 		result = calc(x);
 		return result;
 	}
-}
+};
 
 int main(){
 	Fibonacci teacher;
