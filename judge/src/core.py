@@ -1,5 +1,9 @@
-from ConfigDeploy import Config_Dict
-from initial import initDatabase
+from .ConfigDeploy import Config_Dict
+from .initalSet import initDatabase
+from .validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
+from .dockerTools import existImage, cleanDocker, makeContainer, C
+from .judgeTools import judgeSemantic, judgeCodeGen
+from .gitTools import updateRepo, getGitHash
 import sys
 import docker
 import requests
@@ -12,102 +16,16 @@ import shutil
 import time
 import subprocess
 
-C = docker.from_env()
 sqlConnector = None
 sqlCursor = None
 localdataVersion = None
 
-def existImage(imageName):
-    try:
-        C.images.get(imageName)
-        return True
-    except docker.errors.ImageNotFound as identifier:
-        return False
-    except Exception:
-        return False
-    
-
-def updateRepo(userCompilerLocalPath: str, lastHash: tuple, repoPath: str, uuid: str):
-    cmd = ''
-    commandResult = None
-    timeout = Config_Dict['GitTimeout'] * 4
-    if lastHash[0] != 1: # no previous build or error occurred
-        cmd = 'rm -rf * && git init && git remote add origin %s && git pull origin master' % repoPath
-    else:
-        archiveFileName = '%s.zip' % lastHash[1]
-        backupPath = Config_Dict['compilerBackupPath'] + '/' + uuid + '/'
-        cmd = 'zip -9 -r %s . && cp %s %s && rm %s && git pull -f' % (archiveFileName, archiveFileName, backupPath, archiveFileName)
-    try:
-        commandResult = subprocess.Popen(cmd, cwd=userCompilerLocalPath, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-        start_time = time.time()
-        while True:
-            if commandResult.poll() is not None:
-                break
-            seconds_passed = time.time() - t_beginning 
-            if timeout and seconds_passed > timeout: 
-                commandResult.terminate() 
-                raise Exception()
-            time.sleep(0.1) 
-    except Exception as identifier:
-        return (1, "Timeout")
-        pass
-    return (0, commandResult.stdout.read().decode())
-
-
-
-def checkValidWorkList(worklist: list):
-    for work in worklist:
-        if not 'uuid' in work.items():
-            return False
-        if not 'repo' in work.items():
-            return False
-        if not 'testcase' in work.items():
-            return False
-        if not 'stage' in work.items():
-            return False
-    return True
-
-
-def getGitHash(pathORurl: str):
-    '''
-    Input: path
-    Returns: Tuple<int, str> -> int: 1 Success 2 Error
-    '''
-    gitcmd = 'git ls-remote %s | grep heads/master' % pathORurl
-    version = []
-    try:
-        version = subprocess.check_output(gitcmd, shell=True, timeout=Config_Dict['GitTimeout']).decode().strip().split('\t')
-        if len(version[0]) != 40:
-            return (2, 'Length error, received [%s] with raw [%s]' % (version[0], '\t'.join(version)))
-        return (1, version[0])
-    except subprocess.TimeoutExpired as identifier:
-        return (2, 'Git Timeout: %s' % identifier)
-    except Exception as identifier:
-        return (2, 'Exception: %s' % identifier)
-    
-
-def makeContainer(dockerfilePath: str, imageName: str):
-    try:
-        imagesbuilt_Tuple = C.images.build(dockerfile=dockerfilePath, tag=imageName)
-        return (True, imagesbuilt_Tuple[1], imagesbuilt_Tuple[0])
-    except Exception as identifier:
-        return (False, 'An error in executing makeContainer(%s, %s) in core.py. [%s]' % (dockerfilePath, imageName, identifier))
-        pass
 
 def genLog(s: str):
     with open('JudgeLog.log', 'a') as f:
-        timeStr = time.strftime('%Y.%m.%d %H:%M:%S',time.localtime(time.time()))
-        f.write('[%s] %s\n'%(timeStr, s))
+        timeStr = time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time()))
+        f.write('[%s] %s\n' % (timeStr, s))
 
-def cleanDocker():
-    '''
-    Clean all the existing docker. Except for the base docker.
-    The dockerPrefix is set in ConfigDeploy.
-    '''
-    ImageLists = C.images.list()
-    for image in ImageLists:
-        C.images.remove(image=image.tags)
-    pass
 
 def updateUserList(userlist_Dict: dict):
     sqlCommand = 'SELECT uuid, repo FROM userInfo'
@@ -166,7 +84,7 @@ def updateUserList(userlist_Dict: dict):
 def resetAll():
     cleanDocker()
     Connector = pymysql.Connect(
-        host=Config_Dict['sqladdress'], 
+        host=Config_Dict['sqladdress'],
         port=Config_Dict['sqlport'],
         user=Config_Dict['sqlname'],
         passwd=Config_Dict['sqlword']
@@ -180,6 +98,7 @@ def resetAll():
     cursor.close()
     Connector.close()
     pass
+
 
 '''
 Command Arguments:
@@ -201,34 +120,34 @@ if __name__ == '__main__':
     print('Connecting to the database')
     genLog('Connecting to the database')
     sqlConnector = pymysql.Connect(
-        host=Config_Dict['sqladdress'], 
+        host=Config_Dict['sqladdress'],
         port=Config_Dict['sqlport'],
         user=Config_Dict['sqlname'],
         passwd=Config_Dict['sqlword']
     )
-    sqlCursor = Connector.cursor()
+    sqlCursor = sqlConnector.cursor()
     print('Database Connected')
     genLog('Database Connected')
     print('Preparation: Fetch the user repo list')
     genLog('Preparation: Fetch the user repo list')
-    ## Fetch the user repo list and update 
+    # Fetch the user repo list and update
     url = Config_Dict['serverFetchUser']
     r = requests.get(url)
-    userlist_Dict = r.json()
-    print('  User list fetched, %d records.' % (len(userList)))
-    genLog('=' * 20 + '\nUser list fetched, %d records.' % (len(userList)))
-    for k, v in userlist_Dict.items():
+    userList_Dict = r.json()
+    print('  User list fetched, %d records.' % (len(userList_Dict)))
+    genLog('=' * 20 + '\nUser list fetched, %d records.' % (len(userList_Dict)))
+    for k, v in userList_Dict.items():
         genLog('(User) %s - %s' % (k, v))
     genLog('=' * 20)
-    ## Update the database
-    updateUserList(userlist_Dict)
+    # Update the database
+    updateUserList(userList_Dict)
     genLog('=' * 20)
     genLog('  Check base container')
     imageLists = C.images.list()
     imageTags = [i.tags for i in imageLists]
     if (Config_Dict['dockerprefix'] + 'base') in imageTags:
         print('  Base image detected!')
-    else: 
+    else:
         genLog('  Make base container')
         result = makeContainer(Config_Dict['dockerbasepath'], Config_Dict['dockerprefix'] + 'base')
         if not result[0]:
@@ -248,7 +167,7 @@ if __name__ == '__main__':
             r = requests.get(Config_Dict['serverFetchTask'], timeout=10)
             r.raise_for_status()
             task_Dict = r.json()
-            if task_Dict['code'] == 1: # 1 for sleep
+            if task_Dict['code'] == 1:  # 1 for sleep
                 genLog('  Nothing can be done currently.')
                 continue
             if task_Dict['code'] == 2:
@@ -259,16 +178,20 @@ if __name__ == '__main__':
                 if not validresult_Bool:
                     # TODO: return false result
                     continue
+                submitResult_list = []
                 for subtask_dict in subtask_List:
-                    genLog('(Judge)  Judging: uuid:%s, repo:%s, stage:%d' % (subtask_dict['uuid'], subtask_dict['repo'], subtask_dict['stage']))
+                    genLog('(Judge)  Judging: uuid:%s, repo:%s, stage:%d' % (
+                        subtask_dict['uuid'], subtask_dict['repo'], subtask_dict['stage']))
                     userCompilerPath = Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']
                     # Check the hash value
                     # 1. get local hash
                     hashResultLocal = getGitHash(userCompilerPath)
                     # 2. get remote hash
                     hashResultRemote = getGitHash(subtask_dict['repo'])
-                    hashMatched = (hashResultLocal[0] == 1 and hashResultRemote[0] == 1 and hashResultLocal[1] == hashResultRemote[1])
-                    genLog('(Judge)    Judging:local:%s, remote:%s, matched:%s' % (hashResultLocal, hashResultRemote, hashMatched))
+                    hashMatched = (hashResultLocal[0] == 1 and hashResultRemote[0] == 1 and hashResultLocal[1] ==
+                                   hashResultRemote[1])
+                    genLog('(Judge)    Judging:local:%s, remote:%s, matched:%s' % (
+                        hashResultLocal, hashResultRemote, hashMatched))
                     # if not matched -> save a duplicated copy of the last version
                     # this is a todo function
                     # not matched: update the repo
@@ -278,18 +201,23 @@ if __name__ == '__main__':
                     # Not matched -> build images
                     # dockerimage:uuid[0:8] + hash[0:8]
                     imageName = Config_Dict['dockerprefix'] + subtask_dict['uuid'] + '_' + hashResultRemote[1]
+                    task_Dict['imagename'] = imageName
                     if (not hashMatched) or (not existImage(imageName)):
                         # copy files to temporary
                         _ = subprocess.Popen('mkdir temp && cp %s/* temp/')
                         try:
                             with open('temp/Dockerfile', 'w') as f:
-                                f.write('FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (Config_Dict['dockerprefix'] + 'base', Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']))
+                                f.write(
+                                    'FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
+                                        Config_Dict['dockerprefix'] + 'base',
+                                        Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']))
                             image_built = C.images.build(path='./temp/', rm=True, tag=imageName)
                         except docker.errors.BuildError as identifier:
                             genLog('(Judge-Build)  Built Error occurred. target:%s -> %s' % (subtask_dict, identifier))
                             continue
                         except Exception as identifier:
-                            genLog('(Judge-Build)  Unknown Error occurred. target:%s -> %s' % (subtask_dict, identifier))
+                            genLog(
+                                '(Judge-Build)  Unknown Error occurred. target:%s -> %s' % (subtask_dict, identifier))
                             continue
                         shutil.rmtree('./temp')
                         genLog('(Judge-Build)  built finished. target:%s' % subtask_dict)
@@ -299,12 +227,67 @@ if __name__ == '__main__':
                         else:
                             genLog('(Judge-Build)  check existed = failed, name = %s' % imageName)
                     # build image finish
-                    
-                    
-
-                
-
-
+                    # here we can confirm that image must exists
+                    # next we should get the type of the judging protocol
+                    subtaskResult_dict = {}
+                    if subtask_dict['stage'] == 1:  # semantic check
+                        checkResult = checkSemanticValidity(subtask_dict)
+                        if not checkResult:
+                            # TODO: return false
+                            continue
+                        judgeResult = judgeSemantic(subtask_dict)
+                        subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']
+                        subtaskResult_dict['JudgeResult'] = judgeResult
+                        subtaskResult_dict['Judger'] = Config_Dict['judgerName']
+                        subtaskResult_dict['JudgeTime'] = time.strftime('%Y.%m.%d %H:%M:%S',
+                                                                        time.localtime(time.time()))
+                        submitResult_list.append(subtaskResult_dict)
+                        genLog('(Judge-Semantic)  uuid={}, subWorkId={}, judgeResult={}, Time={}'.format(
+                            subtask_dict['uuid'],
+                            subtask_dict['subWorkId'],
+                            judgeResult,
+                            subtaskResult_dict['JudgeTime']
+                        ))
+                    elif subtask_dict['stage'] == 2 or subtask_dict['stage'] == 3:
+                        checkResult = checkCodegenValidity(subtask_dict)
+                        if not checkResult:
+                            # TODO: return false
+                            continue
+                        judgeResult = judgeCodeGen(subtask_dict)
+                        subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']
+                        subtaskResult_dict['JudgeResult'] = judgeResult
+                        subtaskResult_dict['Judger'] = Config_Dict['judgerName']
+                        subtaskResult_dict['JudgeTime'] = time.strftime('%Y.%m.%d %H:%M:%S',
+                                                                        time.localtime(time.time()))
+                        submitResult_list.append(subtaskResult_dict)
+                        genLog('(Judge-Codegen/Optimize)  uuid={}, subWorkId={}, judgeResult={}, Time={}'.format(
+                            subtask_dict['uuid'],
+                            subtask_dict['subWorkId'],
+                            judgeResult,
+                            subtaskResult_dict['JudgeTime']
+                        ))
+                    else:
+                        # TODO: error, the stage not supported.
+                        genLog('(Judge-Unknown)  uuid={}, subWorkId={}, Not supported stage={}'.format(
+                            subtask_dict['uuid'],
+                            subtask_dict['subWorkId'],
+                            subtask_dict['stage']
+                        ))
+                        pass
+                # submit the result to the server and wait for next
+                while True:
+                    try:
+                        r = requests.post(url=Config_Dict['serverSubmitTask'], data=submitResult_list)
+                        if r.json()['result'] == 'ok':
+                            genLog('(Judge-Submit)  Sent!')
+                            break
+                        genLog('(Judge-Submit)  Not sent! Retry after 1s.')
+                        time.sleep(1) # If not success, resend after 1s
+                    except Exception as identifier:
+                        genLog('(Judge-Submit)  Error occurred! Retry after 1s. {}'.format(identifier))
+                        time.sleep(1)
+                        continue
+                        pass
         except requests.exceptions.ConnectTimeout as identifier:
             print('  -> Connection Timeout with %s, retrying' % identifier)
             genLog('  Connection Timeout with %s' % identifier)
@@ -318,4 +301,3 @@ if __name__ == '__main__':
             print('  Unknown Error occurred with %s' % identifier)
             genLog('   UnknownError: %s' % identifier)
             continue
-    
