@@ -18,7 +18,10 @@ def existImage(imageName):
 
 def makeContainer(dockerfilePath: str, imageName: str):
     try:
-        imagesbuilt_Tuple = C.images.build(dockerfile=dockerfilePath, tag=imageName)
+        # this may take very very long time
+        print('Build Base Image, which will take a very long time')
+        imagesbuilt_Tuple = C.images.build(path=dockerfilePath, tag=imageName)
+        print('Build finished')
         return True, imagesbuilt_Tuple[1], imagesbuilt_Tuple[0]
     except Exception as identifier:
         return False, 'An error in executing makeContainer(%s, %s) in core.py. [%s]' % (

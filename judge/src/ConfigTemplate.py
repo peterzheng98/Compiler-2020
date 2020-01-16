@@ -1,4 +1,5 @@
 Config_Dict = {
+    "judgerName": "Rikka",
     "server": "http://127.0.0.1:10567",
     "serverFetchUser": "http://127.0.0.1:10430/fetchRepo",
     "serverFetchTask": "http://127.0.0.1:10430/fetchTask",
@@ -6,7 +7,7 @@ Config_Dict = {
     "dockerbase": "compilerBase",
     "dockerprefix": "cdocker_",
     "dockerfilepath": "../dockerfile/",
-    "dockerbasepath": "../dockerfile/base.dockerfile",
+    "dockerbasepath": "../dockerfile/Base/",
     "sqladdress": "127.0.0.1",
     "sqlport": 3310,
     "sqlname": "abcdabcd",
@@ -15,5 +16,6 @@ Config_Dict = {
     "dataPath": "/home/judge/data/",
     "compilerPath" : "/home/judge/compiler",
     "compilerBackupPath": "/home/judge/compiler_backup",
-    "GitTimeout": 30
+    "GitTimeout": 30,
+    "MaxlogSize": 4096
 }
