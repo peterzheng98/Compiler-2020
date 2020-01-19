@@ -10,8 +10,10 @@ Semantic Testset: Current 169
 
 ## Proposed Requirements
 
-**Not the final version!!!**
-Mx* -> RISC-V 64bit, ABI=lp64   
+**Not the final version!!!**   
+并非最终版本！！！！！   
+目前该安排没有获得俞老师批准，属于完全非官方性质！   
+Mx* -> RISC-V **32bit, Integer Extended**   
 90% for Rank score, 10% for presentation and others. DDL: 12th - 13th week.   
 3 parts: Semantic, Codegen, Optimize.   
 Whatever the structure you use is acceptable, but special judgement and directly copying code is totally prohibited. If you tried, you will directly get zero.  
