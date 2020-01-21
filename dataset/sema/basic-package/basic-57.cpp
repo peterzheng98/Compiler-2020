@@ -4,7 +4,7 @@ Test Target: Basic
 Author: 16' Yunxuan Xiao
 Time: 2019-11-11
 Verdict: Fail
-Comment: String object cannot be expressions.
+Comment: Invalid expression and lack of ';'
 Origin Package: Semantic Pretest
 */
 int main()
