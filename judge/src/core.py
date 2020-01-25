@@ -19,6 +19,7 @@ import subprocess
 sqlConnector = None
 sqlCursor = None
 localdataVersion = None
+original_user = []
 
 
 def genLog(s: str):
@@ -42,6 +43,7 @@ def updateUserList(userlist_Dict: dict):
             insertList.append((uuid, repo))
         elif olduserList_Dict[uuid] != repo:
             updateList.append((uuid, repo))
+        original_user.append(uuid.copy())
     genLog('(UpdateUser) Total Insertion: %d, Total Modification: %d' % (len(insertList), len(updateList)))
     for i in updateList:
         genLog('(UpdateUser) Modification: %s' % i)
@@ -134,6 +136,15 @@ if __name__ == '__main__':
     url = Config_Dict['serverFetchUser']
     r = requests.get(url)
     userList_Dict = r.json()
+    RetryCount = 0
+    while len(userList_Dict) or userList_Dict['status'] != 200:
+        print('Retry #{}: Request again after 1s.'.format(RetryCount))
+        genLog('Retry #{}: Request again after 1s.'.format(RetryCount))
+        time.sleep(1)
+        url = Config_Dict['serverFetchUser']
+        r = requests.get(url)
+        userList_Dict = r.json()
+    userList_Dict = userList_Dict['message']
     print('  User list fetched, %d records.' % (len(userList_Dict)))
     genLog('=' * 20 + '\nUser list fetched, %d records.' % (len(userList_Dict)))
     for k, v in userList_Dict.items():
@@ -172,6 +183,21 @@ if __name__ == '__main__':
                 continue
             if task_Dict['code'] == 2:
                 genLog(' Accept work %s, contains %d subwork.' % (task_Dict['workid'], len(task_Dict['target'])))
+                if 'newUser' in task_Dict.keys() and len(task_Dict['newUser']) != 0:
+                    corSet = set(original_user)
+                    addRequest = {}
+                    for uuid, repo in task_Dict['newUser'].items():
+                        if uuid not in corSet:
+                            addRequest[uuid] = repo
+                    if len(addRequest) != 0:
+                        print('  User list updated, %d records.' % (len(userList_Dict)))
+                        genLog('=' * 20 + '\nUser list fetched, %d records.' % (len(userList_Dict)))
+                        for k, v in userList_Dict.items():
+                            genLog('(User) %s - %s' % (k, v))
+                        genLog('=' * 20)
+                        # Update the database
+                        updateUserList(addRequest)
+                        genLog('=' * 20)
                 subtask_List = task_Dict['target']
                 # Assert whether the data is valid
                 validresult_Bool = checkValidWorkList(subtask_List)
