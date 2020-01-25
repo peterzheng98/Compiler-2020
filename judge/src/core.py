@@ -9,15 +9,11 @@ import docker
 import requests
 import json
 import time
-import pymysql.cursors
-import pymysql
 import os
 import shutil
 import time
 import subprocess
 
-sqlConnector = None
-sqlCursor = None
 localdataVersion = None
 original_user = []
 
@@ -29,11 +25,7 @@ def genLog(s: str):
 
 
 def updateUserList(userlist_Dict: dict):
-    sqlCommand = 'SELECT uuid, repo FROM userInfo'
-    sqlCursor.execute(sqlCommand)
     olduserList_Dict = {}
-    for row in sqlCursor.fetchall():
-        olduserList_Dict[row[0]] = row[1]
     updateList = []
     insertList = []
     ## There will be no remove strategies.
@@ -47,9 +39,6 @@ def updateUserList(userlist_Dict: dict):
     genLog('(UpdateUser) Total Insertion: %d, Total Modification: %d' % (len(insertList), len(updateList)))
     for i in updateList:
         genLog('(UpdateUser) Modification: %s' % i)
-        sqlCommand = 'UPDATE userInfo SET repo=\'%s\', lastBuild=to_date(\'1970-01-01 00:00:00\', \'yyyy-mm-dd hh24:mi:ss\'), status=\'No previous build\', verdict=\' \' WHERE uuid=\'%s\''
-        genLog('(UpdateUser)    Modification SQL Comannd: %s' % (sqlCommand % (i[1], i[0])))
-        sqlCursor.execute(sqlCommand % (i[1], i[0]))
         uuid = i[0]
         if not os.path.exists(Config_Dict['compilerPath'] + '/' + uuid):
             os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
@@ -64,7 +53,6 @@ def updateUserList(userlist_Dict: dict):
             shutil.rmtree(Config_Dict['compilerBackupPath'] + '/' + uuid)
             genLog('(UpdateUser)     Folder(Backup) with uuid %s not null, remove it and create an empty one.' % uuid)
             os.makedirs(Config_Dict['compilerBackupPath'] + '/' + uuid)
-        sqlConnector.commit()
     for i in insertList:
         genLog('(UpdateUser) Insertion: %s' % i)
         uuid = i[0]
@@ -75,30 +63,12 @@ def updateUserList(userlist_Dict: dict):
             shutil.rmtree(Config_Dict['compilerPath'] + '/' + uuid)
             genLog('(UpdateUser)     Folder with uuid %s not null, remove it and create an empty one.' % uuid)
             os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
-        sqlCommand = 'INSERT INTO userInfo (uuid, repo, lastBuild, status) VALUES (\'%s\', \'%s\', \'1970-01-01 00:00:00\' \'No previous build\')'
-        genLog('(UpdateUser)    Insertion SQL Comannd: %s' % (sqlCommand % i))
-        sqlCursor.execute(sqlCommand % (i[0], i[1]))
-        sqlConnector.commit()
     genLog('(UpdateUser) Finished')
     pass
 
 
 def resetAll():
     cleanDocker()
-    Connector = pymysql.Connect(
-        host=Config_Dict['sqladdress'],
-        port=Config_Dict['sqlport'],
-        user=Config_Dict['sqlname'],
-        passwd=Config_Dict['sqlword']
-    )
-    cursor = Connector.cursor()
-    sqlcommand = 'drop database if exists %s;' % (Config_Dict['sqltable'])
-    cursor.executr(sqlcommand)
-    Connector.commit()
-    print('Database %s deleted!' % (Config_Dict['sqltable']))
-    initDatabase()
-    cursor.close()
-    Connector.close()
     pass
 
 
@@ -119,17 +89,6 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2:
         print('Error in arguments. Vaild arguments are clean, reset.')
         exit(0)
-    print('Connecting to the database')
-    genLog('Connecting to the database')
-    sqlConnector = pymysql.Connect(
-        host=Config_Dict['sqladdress'],
-        port=Config_Dict['sqlport'],
-        user=Config_Dict['sqlname'],
-        passwd=Config_Dict['sqlword']
-    )
-    sqlCursor = sqlConnector.cursor()
-    print('Database Connected')
-    genLog('Database Connected')
     print('Preparation: Fetch the user repo list')
     genLog('Preparation: Fetch the user repo list')
     # Fetch the user repo list and update
@@ -166,9 +125,6 @@ if __name__ == '__main__':
             genLog(result[1])
             print('Make base container failed, check the output log')
             exit(0)
-    # genLog('  Generating Image Templates')
-    # with open(Config_Dict['dockerfilepath'] + 'template.dockerfile', 'w') as f:
-    #     f.write('FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (Config_Dict['dockerprefix'] + 'base', Config_Dict['compilerPath']))
 
     print('Ready to judge')
     while True:
