@@ -223,12 +223,16 @@ if __name__ == '__main__':
                         subtaskResult_dict['Judger'] = Config_Dict['judgerName']
                         subtaskResult_dict['JudgeTime'] = time.strftime('%Y.%m.%d %H:%M:%S',
                                                                         time.localtime(time.time()))
+                        subtaskResult_dict['testCase'] = subtask_dict['testCase']
+                        subtaskResult_dict['judgetype'] = subtask_dict['stage']
+                        subtaskResult_dict['uuid'] = subtask_dict['uuid']
                         submitResult_list.append(subtaskResult_dict)
-                        genLog('(Judge-Semantic)  uuid={}, subWorkId={}, judgeResult={}, Time={}'.format(
+                        genLog('(Judge-Semantic)  uuid={}, subWorkId={}, judgeResult={}, Time={}, testCaseId={}'.format(
                             subtask_dict['uuid'],
                             subtask_dict['subWorkId'],
                             judgeResult,
-                            subtaskResult_dict['JudgeTime']
+                            subtaskResult_dict['JudgeTime'],
+                            subtaskResult_dict['testCase']
                         ))
                     elif subtask_dict['stage'] == 2 or subtask_dict['stage'] == 3:
                         checkResult = checkCodegenValidity(subtask_dict)
@@ -241,12 +245,16 @@ if __name__ == '__main__':
                         subtaskResult_dict['Judger'] = Config_Dict['judgerName']
                         subtaskResult_dict['JudgeTime'] = time.strftime('%Y.%m.%d %H:%M:%S',
                                                                         time.localtime(time.time()))
+                        subtaskResult_dict['testCase'] = subtask_dict['testCase']
+                        subtaskResult_dict['judgetype'] = subtask_dict['stage']
+                        subtaskResult_dict['uuid'] = subtask_dict['uuid']
                         submitResult_list.append(subtaskResult_dict)
-                        genLog('(Judge-Codegen/Optimize)  uuid={}, subWorkId={}, judgeResult={}, Time={}'.format(
+                        genLog('(Judge-Codegen/Optimize)  uuid={}, subWorkId={}, judgeResult={}, Time={}, testCaseId={}'.format(
                             subtask_dict['uuid'],
                             subtask_dict['subWorkId'],
                             judgeResult,
-                            subtaskResult_dict['JudgeTime']
+                            subtaskResult_dict['JudgeTime'],
+                            subtaskResult_dict['testCase']
                         ))
                     else:
                         # TODO: error, the stage not supported.
@@ -259,7 +267,7 @@ if __name__ == '__main__':
                 # submit the result to the server and wait for next
                 while True:
                     try:
-                        r = requests.post(url=Config_Dict['serverSubmitTask'], data=submitResult_list)
+                        r = requests.post(url=Config_Dict['serverSubmitTask'], data=json.dumps(submitResult_list, ensure_ascii=False))
                         if r.json()['result'] == 'ok':
                             genLog('(Judge-Submit)  Sent!')
                             break

@@ -29,17 +29,17 @@ def judgeSemantic(taskDict: dict):
                                             container.log(stdout=True, stderr=False), \
                                             container.log(stdout=False, stderr=True)
         if assertion == (containerExitCode == 0):
-            return 0, '==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+            return '0', '==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
                 stdout[0:Config_Dict['MaxlogSize']],
                 stderr[0:Config_Dict['MaxlogSize']])
         else:
-            return 1, '==Verdict==\nWrong Answer\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+            return '1', '==Verdict==\nWrong Answer\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
                 stdout[0:Config_Dict['MaxlogSize']],
                 stderr[0:Config_Dict['MaxlogSize']])
     except docker.errors.ImageNotFound as identifier:
-        return 2, 'Docker Image not found, {}'.format(identifier)
+        return '2', 'Docker Image not found, {}'.format(identifier)
     except requests.exceptions.ReadTimeout as identifier:
         # Run time out, require kill the container
         containerExitCode, stdout, stderr = container_running_result['StatusCode'], \
@@ -49,12 +49,12 @@ def judgeSemantic(taskDict: dict):
             container.kill()
         except Exception as identifier:
             pass
-        return 3, '==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+        return '3', '==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
             containerExitCode,
             stdout[0:Config_Dict['MaxlogSize']],
             stderr[0:Config_Dict['MaxlogSize']])
     except Exception as identifier:
-        return 2, 'Unknown error occurred, {}'.format(identifier)
+        return '2', 'Unknown error occurred, {}'.format(identifier)
 
 
 def judgeCodeGen(taskDict: dict):
@@ -65,4 +65,4 @@ def judgeCodeGen(taskDict: dict):
     2 for Runtime Error. tuple[1] for message. 3 for Timeout
     """
     # Here wait for Yunwei Ren's simulator
-    return -1, 'Under development'
+    return '-1', 'Under development'
