@@ -36,6 +36,19 @@ type dataSemanticFormat struct {
 	MemoryLimit int     `json:"memory_limit, omitempty"`
 }
 
+type dataCodegenFormat struct {
+	SourceCode  string  `json:"source_code"`
+	Assertion   bool    `json:"assertion"`
+	TimeLimit   float32  `json:"time_limit, omitempty"`
+	InstLimit   int     `json:"inst_limit, omitempty"`
+	MemoryLimit int     `json:"memory_limit, omitempty"`
+	InputContext string `json:"input_context"`
+	OutputContext string `json:"output_context"`
+	OutputCode int `json:"output_code"`
+	BasicType int `json:"basic_type"`
+}
+
+
 type subtaskSemanticFormat struct {
 	Uuid            string  `json:"uuid"`
 	Repo            string  `json:"repo"`
@@ -86,11 +99,13 @@ type submitTaskElement struct{
 	TestCase    string   `json:"testCase"`
 	Judgetype   int      `json:"judgetype"`
 	Uuid	    string   `json:"uuid"`
+	GitHash		string   `json:"git_hash"`
 }
 
 type JudgePoolElement struct{
 	uuid string
 	repo string
+	githash string
 	success []string
 	fail []string
 	pending []string
@@ -107,11 +122,11 @@ func executionQuery(cmd string)(*sql.Rows, error){
 	// Execute the query
 	result, err := db.Query(cmd)
 	if err != nil{
-		fmt.Printf("runtime Error: %s", err.Error())
+		fmt.Printf("runtime Error: %s\n", err.Error())
 		return nil, err
 	}
 	if result == nil{
-		fmt.Printf("runtime Error: execution with return empty cursor.")
+		fmt.Printf("runtime Error: execution with return empty cursor.\n")
 		return nil, fmt.Errorf("execution with return empty cursor")
 	}
 	return result, err
@@ -125,7 +140,6 @@ func executionExec(cmd string)(sql.Result, error){
 	}
 	return result, err
 }
-
 // /fetchRepo test ok!
 func getUserList(w http.ResponseWriter, r *http.Request){
 	fmt.Printf("[*] Request from: %s\n", r.Host)
@@ -201,10 +215,10 @@ func addDataSemantic(w http.ResponseWriter, r *http.Request){
 	}
 	_, err = fmt.Fprintf(w, "{\"%s\": %d, \"%s\": \"%s\"}", "code", 200, "message", uid)
 }
-// TODO: wait to be updated
+// /addDataCodegen test ok!
 func addDataCodegen(w http.ResponseWriter, r *http.Request){
 	// add the data into database
-	var record dataSemanticFormat
+	var record dataCodegenFormat
 	err := json.NewDecoder(r.Body).Decode(&record)
 	if err != nil{
 		fmt.Printf("runtime error: not success in creating data. ErrMsg: %s\n", err.Error())
@@ -213,8 +227,15 @@ func addDataCodegen(w http.ResponseWriter, r *http.Request){
 	}
 	fmt.Printf("[*] data:%s\n",record)
 	uid := n.Next()
-	SQLcommand := fmt.Sprintf("INSERT INTO Dataset_semantic(sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit, sema_instLimit) " +
-		"VALUES ('%s', '%s', %t, %.2f, %d, %d)", uid, record.SourceCode, record.Assertion, record.TimeLimit, record.MemoryLimit, record.InstLimit)
+	var SQLcommand string
+	if record.BasicType == 1 {
+		SQLcommand = fmt.Sprintf("INSERT INTO Dataset_optimize(optim_uid, optim_sourceCode, optim_assertion, optim_timeLimit, optim_memoryLimit, optim_instLimit, optim_inputCtx, optim_outputCtx, optim_outputCode) "+
+			"VALUES ('%s', '%s', %t, %.2f, %d, %d, '%s', '%s', %d)", uid, record.SourceCode, record.Assertion, record.TimeLimit, record.MemoryLimit, record.InstLimit, record.InputContext, record.OutputContext, record.OutputCode)
+	} else {
+		SQLcommand = fmt.Sprintf("INSERT INTO Dataset_codegen(cg_uid, cg_sourceCode, cg_assertion, cg_timeLimit, cg_memoryLimit, cg_instLimit, cg_inputCtx, cg_outputCtx, cg_outputCode) "+
+			"VALUES ('%s', '%s', %t, %.2f, %d, %d, '%s', '%s', %d)", uid, record.SourceCode, record.Assertion, record.TimeLimit, record.MemoryLimit, record.InstLimit, record.InputContext, record.OutputContext, record.OutputCode)
+
+	}
 	_, err = executionExec(SQLcommand)
 	if err != nil{
 		fmt.Printf("runtime error: %s\n", err.Error())
@@ -230,11 +251,11 @@ func addOptimize(uuid string, repo string){
 		repo:    repo,
 		success: make([]string, 0),
 		fail:    make([]string, 0),
-		pending: make([]string, 5),
+		pending: make([]string, 0),
 		running: make([]string, 0),
 		total:   0,
 	}
-	result, err := executionQuery("SELECT uid FROM dataset_optimize")
+	result, err := executionQuery("SELECT optim_uid FROM dataset_optimize")
 	if result == nil{
 		fmt.Printf("runtime error: result is null")
 		return
@@ -258,7 +279,7 @@ func addCodegen(uuid string, repo string){
 		repo:    repo,
 		success: make([]string, 0),
 		fail:    make([]string, 0),
-		pending: make([]string, 5),
+		pending: make([]string, 0),
 		running: make([]string, 0),
 		total:   0,
 	}
@@ -286,28 +307,32 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 		var runningList []string
 		remainPend := len(poolElement.pending)
 		var idx = 0
-		for ;remainPend != 0 && idx < len(semanticPool); idx++{
+		for ;remainPend == 0 && idx < len(semanticPool); idx++{
 			poolElement = semanticPool[idx]
 			remainPend = len(poolElement.pending)
+			if remainPend != 0{
+				break
+			}
 		}
 		if remainPend != 0 {
 			if remainPend < 5 {
-				semanticPool[0].running = make([]string, remainPend)
+				semanticPool[idx].running = make([]string, remainPend)
 				runningList = make([]string, remainPend)
-				_ = copy(semanticPool[0].running, semanticPool[0].pending)
+				_ = copy(semanticPool[idx].running, semanticPool[idx].pending)
+				semanticPool[idx].pending = append(semanticPool[idx].pending[remainPend:])
 			} else {
-				semanticPool[0].running = make([]string, 5)
+				semanticPool[idx].running = make([]string, 5)
 				runningList = make([]string, 5)
-				_ = copy(semanticPool[0].running, semanticPool[0].pending[0:5])
-				semanticPool[0].pending = append(semanticPool[0].pending[5:])
+				_ = copy(semanticPool[idx].running, semanticPool[idx].pending[0:5])
+				semanticPool[idx].pending = append(semanticPool[idx].pending[5:])
 			}
-			_ = copy(runningList, semanticPool[0].running)
+			_ = copy(runningList, semanticPool[idx].running)
 			cmd := "SELECT sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE " +
 				"sema_uid='" + strings.Join(runningList, "' OR sema_uid='") + "'"
-			fmt.Printf("Execution Sentence:%s", cmd)
+			fmt.Printf("Execution Sentence:%s\n", cmd)
 			result, err := executionQuery(cmd)
 			if err != nil {
-				fmt.Printf("Error %s", err.Error())
+				fmt.Printf("Error %s\n", err.Error())
 				return
 			}
 			var sentReq requestSemanticTaskFormat
@@ -321,7 +346,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				var memoryLimit int
 				err = result.Scan(&id, &sourceCode, &assert, &timeLimit, &memoryLimit)
 				if err != nil {
-					fmt.Printf("runtime warning:%s when scanning the semantic database", err.Error())
+					fmt.Printf("runtime warning:%s when scanning the semantic database\n", err.Error())
 				}
 				sentReq.Target = append(sentReq.Target, subtaskSemanticFormat{
 					Uuid:            poolElement.uuid,
@@ -338,7 +363,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 
 			err = json.NewEncoder(w).Encode(sentReq)
 			if err != nil {
-				fmt.Printf("runtime error: %s", err.Error())
+				fmt.Printf("runtime error: %s\n", err.Error())
 			}
 			return
 		}
@@ -348,24 +373,29 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 		var runningList []string
 		remainPend := len(poolElement.pending)
 		var idx = 0
-		for ;remainPend != 0 && idx < len(codegenPool); idx++{
+		for ;remainPend == 0 && idx < len(codegenPool); idx++{
 			poolElement = codegenPool[idx]
 			remainPend = len(poolElement.pending)
+			if remainPend != 0{
+				break
+			}
 		}
 		if remainPend != 0 {
 			if remainPend < 5 {
-				codegenPool[0].running = make([]string, remainPend)
+				codegenPool[idx].running = make([]string, remainPend)
 				runningList = make([]string, remainPend)
-				_ = copy(codegenPool[0].running, codegenPool[0].pending)
+				_ = copy(codegenPool[idx].running, codegenPool[idx].pending)
+				codegenPool[idx].pending = append(codegenPool[idx].pending[remainPend:])
 			} else {
-				codegenPool[0].running = make([]string, 5)
+				codegenPool[idx].running = make([]string, 5)
 				runningList = make([]string, 5)
-				_ = copy(codegenPool[0].running, codegenPool[0].pending[0:5])
-				codegenPool[0].pending = append(codegenPool[0].pending[5:])
+				_ = copy(codegenPool[idx].running, codegenPool[idx].pending[0:5])
+				codegenPool[idx].pending = append(codegenPool[idx].pending[5:])
 			}
-			_ = copy(runningList, codegenPool[0].running)
-			cmd := "SELECT uid, sourceCode, assert, timeLimit, memoryLimit, inputContext, outputContext, outputCode FROM dataset_codegen WHERE uid=" + strings.Join(runningList, " OR uid=")
-			fmt.Printf("Execution Sentence:%s", cmd)
+			_ = copy(runningList, codegenPool[idx].running)
+			cmd := "SELECT cg_uid, cg_sourceCode, cg_assertion, cg_timeLimit, cg_memoryLimit, cg_inputCtx, cg_outputCtx, cg_outputCode FROM dataset_codegen WHERE " +
+				"cg_uid='" + strings.Join(runningList, "' OR cg_uid='") + "'"
+			fmt.Printf("Execution Sentence:%s\n", cmd)
 			result, err := executionQuery(cmd)
 			if err != nil {
 				fmt.Printf("Error %s", err.Error())
@@ -414,24 +444,29 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 		var runningList []string
 		remainPend := len(poolElement.pending)
 		var idx = 0
-		for ;remainPend != 0 && idx < len(optimizePool); idx++{
+		for ;remainPend == 0 && idx < len(optimizePool); idx++{
 			poolElement = optimizePool[idx]
 			remainPend = len(poolElement.pending)
+			if remainPend != 0{
+				break
+			}
 		}
 		if remainPend != 0 {
 			if remainPend < 5 {
-				optimizePool[0].running = make([]string, remainPend)
+				optimizePool[idx].running = make([]string, remainPend)
 				runningList = make([]string, remainPend)
-				_ = copy(optimizePool[0].running, optimizePool[0].pending)
+				_ = copy(optimizePool[idx].running, optimizePool[idx].pending)
+				optimizePool[idx].pending = append(optimizePool[idx].pending[remainPend:])
 			} else {
-				optimizePool[0].running = make([]string, 5)
+				optimizePool[idx].running = make([]string, 5)
 				runningList = make([]string, 5)
-				_ = copy(optimizePool[0].running, optimizePool[0].pending[0:5])
-				optimizePool[0].pending = append(optimizePool[0].pending[5:])
+				_ = copy(optimizePool[idx].running, optimizePool[idx].pending[0:5])
+				optimizePool[idx].pending = append(optimizePool[idx].pending[5:])
 			}
-			_ = copy(runningList, optimizePool[0].running)
-			cmd := "SELECT uid, sourceCode, assert, timeLimit, memoryLimit, inputContext, outputContext, outputCode FROM dataset_optimize WHERE uid=" + strings.Join(runningList, " OR uid=")
-			fmt.Printf("Execution Sentence:%s", cmd)
+			_ = copy(runningList, optimizePool[idx].running)
+			cmd := "SELECT optim_uid, optim_sourceCode, optim_assertion, optim_timeLimit, optim_memoryLimit, optim_inputCtx, optim_outputCtx, optim_outputCode FROM dataset_optimize WHERE " +
+				"optim_uid='" + strings.Join(runningList, "' OR optim_uid='") + "'"
+			fmt.Printf("Execution Sentence:%s\n", cmd)
 			result, err := executionQuery(cmd)
 			if err != nil {
 				fmt.Printf("Error %s", err.Error())
@@ -457,7 +492,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 					Uuid:            poolElement.uuid,
 					Repo:            poolElement.repo,
 					TestCase:        id,
-					Stage:           2,
+					Stage:           3,
 					Subworkid:       id + "_" + n.Next(),
 					InputSourceCode: sourceCode,
 					InputContent:    inputContext,
@@ -547,10 +582,11 @@ func submitTask(w http.ResponseWriter, r *http.Request){
 			var flag bool = false
 			for idx, semanticV := range semanticPool{
 				if semanticV.uuid == v.Uuid{
+					semanticPool[idx].githash = v.GitHash
 					if v.JudgeResult[0] == "1" {
-						semanticPool[idx].success = append(semanticPool[idx].success, v.TestCase)
+						semanticPool[idx].success = append(semanticPool[idx].success, v.SubworkId)
 					} else {
-						semanticPool[idx].fail = append(semanticPool[idx].fail, v.TestCase)
+						semanticPool[idx].fail = append(semanticPool[idx].fail, v.SubworkId)
 					}
 					for idx2, entry := range semanticV.running{
 						if entry == v.TestCase{
@@ -569,10 +605,11 @@ func submitTask(w http.ResponseWriter, r *http.Request){
 			var flag bool = false
 			for idx, semanticV := range codegenPool{
 				if semanticV.uuid == v.Uuid{
+					codegenPool[idx].githash = v.GitHash
 					if v.JudgeResult[0] == "1" {
-						codegenPool[idx].success = append(codegenPool[idx].success, v.TestCase)
+						codegenPool[idx].success = append(codegenPool[idx].success, v.SubworkId)
 					} else {
-						codegenPool[idx].fail = append(codegenPool[idx].fail, v.TestCase)
+						codegenPool[idx].fail = append(codegenPool[idx].fail, v.SubworkId)
 					}
 					for idx2, entry := range semanticV.running{
 						if entry == v.TestCase{
@@ -591,10 +628,11 @@ func submitTask(w http.ResponseWriter, r *http.Request){
 			var flag bool = false
 			for idx, semanticV := range optimizePool{
 				if semanticV.uuid == v.Uuid{
+					optimizePool[idx].githash = v.GitHash
 					if v.JudgeResult[0] == "1" {
-						optimizePool[idx].success = append(optimizePool[idx].success, v.TestCase)
+						optimizePool[idx].success = append(optimizePool[idx].success, v.SubworkId)
 					} else {
-						optimizePool[idx].fail = append(optimizePool[idx].fail, v.TestCase)
+						optimizePool[idx].fail = append(optimizePool[idx].fail, v.SubworkId)
 					}
 					for idx2, entry := range semanticV.running{
 						if entry == v.TestCase{
@@ -637,19 +675,79 @@ func submitTask(w http.ResponseWriter, r *http.Request){
 	// check whether it should be sent into next stage
 	for k, v := range RemoveIdx{
 		for _, v2 := range v{
-			if k == 1{
+			if k == 0{
 				sliceElement := semanticPool[v2]
 				addCodegen(sliceElement.uuid, sliceElement.repo)
+				fmt.Printf("\t[*] Semantic Judge Finish: %s - %s Semantic accepted\n", sliceElement.uuid, sliceElement.repo)
+				commandStr := "INSERT JudgeResult(judge_p_useruuid, judge_p_githash, judge_p_repo, judge_p_verdict, judge_p_semantic) VALUES('"
+				dataString := sliceElement.uuid + "','" + sliceElement.githash + "','" + sliceElement.repo + "', 2, '1[" + strings.Join(sliceElement.success, "/") + "]')"
+				commandStr += dataString
+				_, err := executionExec(commandStr)
+				if err != nil{
+					fmt.Printf("runtime error[submitTas-semantic]: %s\n", err.Error())
+				}
 				semanticPool = append(semanticPool[0:v2], semanticPool[v2+1:]...)
 			}
-			if k == 2{
+			if k == 1{
 				sliceElement := codegenPool[v2]
-				addCodegen(sliceElement.uuid, sliceElement.repo)
+				addOptimize(sliceElement.uuid, sliceElement.repo)
+				fmt.Printf("\t[*] Codegen Judge Finish: %s - %s Semantic accepted\n", sliceElement.uuid, sliceElement.repo)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_codegen ='%s' WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s'", "1[" + strings.Join(sliceElement.success, "/") + "]", sliceElement.uuid, sliceElement.githash, sliceElement.repo)
+				fmt.Printf("[submitTask-codegen] SQL:%s\n", commandStr)
+				_, err := executionExec(commandStr)
+				if err != nil{
+					fmt.Printf("runtime error[submitTask-codegen]: %s\n", err.Error())
+				}
 				codegenPool = append(codegenPool[0:v2], codegenPool[v2+1:]...)
 			}
-			if k == 3{
+			if k == 2{
 				sliceElement := optimizePool[v2]
-				addCodegen(sliceElement.uuid, sliceElement.repo)
+				fmt.Printf("Judge Finish: %s - %s All accepted\n", sliceElement.uuid, sliceElement.repo)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_optimize ='%s', judge_p_verdict= WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s'", "1[" + strings.Join(sliceElement.success, "/") + "]", sliceElement.uuid, sliceElement.githash, sliceElement.repo)
+				fmt.Printf("[submitTask-codegen] SQL:%s\n", commandStr)
+				_, err := executionExec(commandStr)
+				if err != nil{
+					fmt.Printf("runtime error[submitTask]: %s\n", err.Error())
+				}
+				optimizePool = append(optimizePool[0:v2], optimizePool[v2+1:]...)
+			}
+		}
+	}
+	// remove the data if failed test
+	for k, v := range wrongIdx{
+		for _, v2 := range v{
+			if k == 0{
+				sliceElement := semanticPool[v2]
+				fmt.Printf("\t[*] Semantic Judge Finish: %s - %s Semantic failed\n", sliceElement.uuid, sliceElement.repo)
+				commandStr := "INSERT JudgeResult(judge_p_useruuid, judge_p_githash, judge_p_repo, judge_p_verdict, judge_p_semantic) VALUES('"
+				dataString := sliceElement.uuid + "','" + sliceElement.githash + "','" + sliceElement.repo + "', 0, '0[" + strings.Join(sliceElement.success, "/") + "][" + strings.Join(sliceElement.fail, "/") + "'])"
+				commandStr += dataString
+				_, err := executionExec(commandStr)
+				if err != nil{
+					fmt.Printf("runtime error[submitTask]: %s\n", err.Error())
+				}
+				semanticPool = append(semanticPool[0:v2], semanticPool[v2+1:]...)
+			}
+			if k == 1{
+				sliceElement := codegenPool[v2]
+				fmt.Printf("\t[*] Codegen Judge Finish: %s - %s Codegen failed\n", sliceElement.uuid, sliceElement.repo)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_codegen ='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s'", "0[" + strings.Join(sliceElement.success, "/") + "][" + strings.Join(sliceElement.fail, "/") + "]", sliceElement.uuid, sliceElement.githash, sliceElement.repo)
+				fmt.Printf("[submitTask-codegen-failed] SQL:%s\n", commandStr)
+				_, err := executionExec(commandStr)
+				if err != nil{
+					fmt.Printf("runtime error[submitTask-codegen]: %s\n", err.Error())
+				}
+				codegenPool = append(codegenPool[0:v2], codegenPool[v2+1:]...)
+			}
+			if k == 2{
+				sliceElement := optimizePool[v2]
+				fmt.Printf("\t[*] Optimize Judge Finish: %s - %s Optimize failed\n", sliceElement.uuid, sliceElement.repo)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_optimize ='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s'", "0[" + strings.Join(sliceElement.success, "/") + "][" + strings.Join(sliceElement.fail, "/") + "]", sliceElement.uuid, sliceElement.githash, sliceElement.repo)
+				fmt.Printf("[submitTask-optimize-failed] SQL:%s\n", commandStr)
+				_, err := executionExec(commandStr)
+				if err != nil{
+					fmt.Printf("runtime error[submitTask-optimize-2]: %s\n", err.Error())
+				}
 				optimizePool = append(optimizePool[0:v2], optimizePool[v2+1:]...)
 			}
 		}
@@ -657,8 +755,8 @@ func submitTask(w http.ResponseWriter, r *http.Request){
 	// add the judge result into database
 	var commandStr string
 	for _, v := range array{
-		commandStr = "INSERT INTO judgeDetail(uuid, judger, judgeTime, subworkId, testcase, result, type) VALUES ("
-		dataString := v.Uuid + "," + v.Judger + "," + v.JudgeTime + "," + v.SubworkId + "," + v.TestCase + "," + strings.Join(v.JudgeResult, "/") + "," + fmt.Sprintf("%d)", v.Judgetype)
+		commandStr = "INSERT INTO JudgeDetail(judge_d_useruuid, judge_d_githash, judge_d_judger, judge_d_judgeTime, judge_d_subworkId, judge_d_testcase, judge_d_result, judge_d_type) VALUES ('"
+		dataString := v.Uuid + "','" + v.GitHash + "','" + v.Judger + "','" + v.JudgeTime + "','" + v.SubworkId + "','" + v.TestCase + "','" + strings.Join(v.JudgeResult, "/") + "'," + fmt.Sprintf("%d)", v.Judgetype)
 		commandStr += dataString
 		_, err := executionExec(commandStr)
 		if err != nil{
