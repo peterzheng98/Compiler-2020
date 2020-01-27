@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -8,10 +9,33 @@ import (
 	"github.com/nats-io/nuid"
 	_ "github.com/nats-io/nuid"
 	"net/http"
+	"runtime/trace"
 	"strings"
 )
 
 var n = nuid.New()
+var user_nuid = nuid.New()
+type sendFormat struct {
+	Code int `json:"code"`
+	Message map[string]string `json:"message"`
+}
+
+type userAddFormat struct{
+	StuId string `json:"stu_id"`
+	StuRepo string `json:"stu_repo"`
+	StuName string `json:"stu_name"`
+	StuPassword string `json:"stu_password"`
+	StuEmail string `json:"stu_email"`
+}
+
+type dataSemanticFormat struct {
+	SourceCode  string  `json:"source_code"`
+	Assertion   bool    `json:"assertion"`
+	TimeLimit   float32 `json:"time_limit, omitempty"`
+	InstLimit   int     `json:"inst_limit, omitempty"`
+	MemoryLimit int     `json:"memory_limit, omitempty"`
+}
+
 type subtaskSemanticFormat struct {
 	Uuid            string  `json:"uuid"`
 	Repo            string  `json:"repo"`
@@ -77,18 +101,9 @@ type JudgePoolElement struct{
 var semanticPool []JudgePoolElement
 var codegenPool []JudgePoolElement
 var optimizePool []JudgePoolElement
+var db, _ = sql.Open("mysql", "client:password1A@tcp(127.0.0.1:3306)/compiler")
 
 func executionQuery(cmd string)(*sql.Rows, error){
-	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/compiler")
-	if err != nil{
-		fmt.Printf("runtime Error: %s", err.Error())
-		return nil, err
-	}
-	if db == nil{
-		fmt.Printf("runtime Error: Database open failed.(db is nil)")
-		return nil, fmt.Errorf("database open failed")
-	}
-	defer db.Close()
 	// Execute the query
 	result, err := db.Query(cmd)
 	if err != nil{
@@ -102,9 +117,20 @@ func executionQuery(cmd string)(*sql.Rows, error){
 	return result, err
 }
 
+func executionExec(cmd string)(sql.Result, error){
+	result, err := db.Exec(cmd)
+	if err != nil{
+		fmt.Printf("runtime Error: %s\n", err.Error())
+		return nil, err
+	}
+	return result, err
+}
+
+// /fetchRepo test ok!
 func getUserList(w http.ResponseWriter, r *http.Request){
+	fmt.Printf("[*] Request from: %s\n", r.Host)
 	// Fetch the user list in the database
-	result, err := executionQuery("SELECT uuid, repo FROM userDatabase")
+	result, err := executionQuery("SELECT stu_uuid, stu_repo FROM userDatabase")
 	if result == nil{
 		fmt.Printf("runtime Error: execution with return empty cursor.")
 		return
@@ -122,9 +148,136 @@ func getUserList(w http.ResponseWriter, r *http.Request){
 		}
 		userDatSent[userUuid] = userRepo
 	}
+	_ = json.NewEncoder(w).Encode(sendFormat{
+		Code:    200,
+		Message: userDatSent,
+	})
 	sendMap, _ := json.Marshal(userDatSent)
-	_, _ = fmt.Fprint(w, sendMap)
-	fmt.Printf("send: %s", sendMap)
+	//_, _ = fmt.Fprint(w, sendMap)
+	fmt.Printf("\t[√] send: %s\n", sendMap)
+}
+// /addUser test ok!
+func addUser(w http.ResponseWriter, r *http.Request){
+	// Debug stage
+	// Structure: stu_id+repo+name+password+email -> return uuid
+	var record userAddFormat
+	err := json.NewDecoder(r.Body).Decode(&record)
+	if err != nil{
+		fmt.Printf("runtime error: not success in add user, host: %s, message: %s", r.Host, r.Body)
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+	}
+	userNNID := user_nuid.Next()
+	userRealNNID := fmt.Sprint(record.StuId)[9:] + userNNID
+
+	cmd := fmt.Sprintf("INSERT INTO UserDatabase(stu_uuid, stu_id, stu_repo, stu_name, stu_password, stu_email) VALUES ('%s', '%s', '%s', '%s', '%s', '%s');", userRealNNID, record.StuId, record.StuRepo, record.StuName, record.StuPassword, record.StuEmail)
+	fmt.Printf("\t[*] [addUser] Execute SQL Command:%s\n", cmd)
+	_, err = executionExec(cmd)
+	if err != nil{
+		fmt.Printf("runtime error: not success in add user, host: %s, message: %s\n", r.Host,  fmt.Sprintf("%s", err.Error()))
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", fmt.Sprintf("%s", err.Error()))
+		return
+	}
+	_, _ = fmt.Fprintf(w, "{\"code\": 200, \"message\": \"Added user %s -> %s\"}", record.StuId, userRealNNID)
+}
+// /addDataSemantic test ok!
+func addDataSemantic(w http.ResponseWriter, r *http.Request){
+	// add the data into database
+	var record dataSemanticFormat
+	err := json.NewDecoder(r.Body).Decode(&record)
+	if err != nil{
+		fmt.Printf("runtime error: not success in creating data. ErrMsg: %s\n", err.Error())
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+		return
+	}
+	fmt.Printf("[*] data:%s\n",record)
+	uid := n.Next()
+	SQLcommand := fmt.Sprintf("INSERT INTO Dataset_semantic(sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit, sema_instLimit) " +
+		"VALUES ('%s', '%s', %t, %.2f, %d, %d)", uid, record.SourceCode, record.Assertion, record.TimeLimit, record.MemoryLimit, record.InstLimit)
+	_, err = executionExec(SQLcommand)
+	if err != nil{
+		fmt.Printf("runtime error: %s\n", err.Error())
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+		return
+	}
+	_, err = fmt.Fprintf(w, "{\"%s\": %d, \"%s\": \"%s\"}", "code", 200, "message", uid)
+}
+// TODO: wait to be updated
+func addDataCodegen(w http.ResponseWriter, r *http.Request){
+	// add the data into database
+	var record dataSemanticFormat
+	err := json.NewDecoder(r.Body).Decode(&record)
+	if err != nil{
+		fmt.Printf("runtime error: not success in creating data. ErrMsg: %s\n", err.Error())
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+		return
+	}
+	fmt.Printf("[*] data:%s\n",record)
+	uid := n.Next()
+	SQLcommand := fmt.Sprintf("INSERT INTO Dataset_semantic(sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit, sema_instLimit) " +
+		"VALUES ('%s', '%s', %t, %.2f, %d, %d)", uid, record.SourceCode, record.Assertion, record.TimeLimit, record.MemoryLimit, record.InstLimit)
+	_, err = executionExec(SQLcommand)
+	if err != nil{
+		fmt.Printf("runtime error: %s\n", err.Error())
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+		return
+	}
+	_, err = fmt.Fprintf(w, "{\"%s\": %d, \"%s\": \"%s\"}", "code", 200, "message", uid)
+}
+
+func addOptimize(uuid string, repo string){
+	element := JudgePoolElement{
+		uuid:    uuid,
+		repo:    repo,
+		success: make([]string, 0),
+		fail:    make([]string, 0),
+		pending: make([]string, 5),
+		running: make([]string, 0),
+		total:   0,
+	}
+	result, err := executionQuery("SELECT uid FROM dataset_optimize")
+	if result == nil{
+		fmt.Printf("runtime error: result is null")
+		return
+	}
+	defer result.Close()
+
+	for result.Next(){
+		var id string
+		err = result.Scan(&id)
+		if err != nil{
+			fmt.Printf("runtime warning:%s when scanning the optimize database", err.Error())
+		}
+		element.pending = append(element.pending, id)
+	}
+	optimizePool = append(optimizePool, element)
+}
+
+func addCodegen(uuid string, repo string){
+	element := JudgePoolElement{
+		uuid:    uuid,
+		repo:    repo,
+		success: make([]string, 0),
+		fail:    make([]string, 0),
+		pending: make([]string, 5),
+		running: make([]string, 0),
+		total:   0,
+	}
+	result, err := executionQuery("SELECT cg_uid FROM dataset_codegen")
+	if result == nil{
+		fmt.Printf("runtime error: result is null")
+		return
+	}
+	defer result.Close()
+
+	for result.Next(){
+		var id string
+		err = result.Scan(&id)
+		if err != nil{
+			fmt.Printf("runtime warning:%s when scanning the codegen database", err.Error())
+		}
+		element.pending = append(element.pending, id)
+	}
+	codegenPool = append(codegenPool, element)
 }
 
 func getTask(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +302,8 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				semanticPool[0].pending = append(semanticPool[0].pending[5:])
 			}
 			_ = copy(runningList, semanticPool[0].running)
-			cmd := "SELECT uid, sourceCode, assert, timeLimit, memoryLimit FROM dataset_semantic WHERE uid=" + strings.Join(runningList, " OR uid=")
+			cmd := "SELECT sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE " +
+				"sema_uid='" + strings.Join(runningList, "' OR sema_uid='") + "'"
 			fmt.Printf("Execution Sentence:%s", cmd)
 			result, err := executionQuery(cmd)
 			if err != nil {
@@ -330,37 +484,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 	}
 	return
 }
-// TODO: Not finished
-func addUser(w http.ResponseWriter, r *http.Request){
-	// Debug stage
-	// Structure: id+repo+name+password+email -> return uuid
-	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/compiler")
-	if err != nil{
-		fmt.Printf("runtime Error: %s", err.Error())
-		// send empty message
-		_, _ = fmt.Fprint(w, "{\"code\": 400, \"message\": \"Internal Error\"}")
-		return
-	}
-	if db == nil{
-		fmt.Printf("runtime Error: Database open failed.(db is nil)")
-		// send empty message
-		_, _ = fmt.Fprint(w, "{\"code\": 400, \"message\": \"Internal Error\"}")
-		return
-	}
-	defer db.Close()
-	// Execute the query
-	result, err := db.Query("SELECT uuid, repo FROM userDatabase")
-	if err != nil{
-		fmt.Printf("runtime Error: %s", err.Error())
-		_, _ = fmt.Fprint(w, "{\"code\": 400, \"message\": \"Internal Error\"}")
-		return
-	}
-	if result == nil{
-		fmt.Printf("runtime Error: execution with return empty cursor.")
-		return
-	}
-	_, _ = fmt.Fprintf(w, "{\"code\": 200, \"message\": \"Added user %s -> %s\"}", "111", "111")
-}
+
 
 func reqJudge(w http.ResponseWriter, r *http.Request){
 	// Structure: {'uuid', 'repo'}
@@ -368,18 +492,20 @@ func reqJudge(w http.ResponseWriter, r *http.Request){
 	var record requestJudgeFormat
 	err := json.NewDecoder(r.Body).Decode(&record)
 	if err != nil{
-		fmt.Printf("runtime error: not success in creating record.")
-		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": %s}", err.Error())
+		fmt.Printf("runtime error: not success in creating record.\n")
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+		return
 	}
 	// request for all the record in database
-	result, err := executionQuery("SELECT uid FROM database_semantic")
+	result, err := executionQuery("SELECT sema_uid FROM dataset_semantic")
 	if err != nil{
 		fmt.Printf("runtime Error: %s", err.Error())
-		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": %s}", err.Error())
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+		return
 	}
 	if result == nil{
 		fmt.Printf("runtime Error: %s", "Result is empty")
-		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": %s}", "Result is empty")
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", "Result is empty")
 		return
 	}
 	defer result.Close()
@@ -395,13 +521,10 @@ func reqJudge(w http.ResponseWriter, r *http.Request){
 		poolElement.pending = append(poolElement.pending, id)
 	}
 	semanticPool = append(semanticPool, poolElement)
-
-	_, err = fmt.Fprintf(w, "{%s: %d}", "\"code\"", 200)
+	fmt.Printf("After: pool: %s\n", semanticPool)
+	_, err = fmt.Fprintf(w, "{\"%s\": %d, \"%s\": \"%s\"}", "code", 200, "message", "123")
 }
 
-func addData(w http.ResponseWriter, r *http.Request){
-	// add the data into database
-}
 
 func removeData(w http.ResponseWriter, r *http.Request){
 	// remove the data in the database
@@ -488,26 +611,81 @@ func submitTask(w http.ResponseWriter, r *http.Request){
 		}
 	}
 	// check whether the user can go into the next stage
-	// add the judge result into database
-
-
-
-
-	
+	var RemoveIdx [][]int = make([][]int, 3)
+	var wrongIdx [][]int = make([][]int, 3)
+	for idx, v := range semanticPool{
+		if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) == 0{
+			RemoveIdx[0] = append(RemoveIdx[0], idx)
+		} else if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) != 0{
+			wrongIdx[0] = append(wrongIdx[0], idx)
+		}
+	}
+	for idx, v := range codegenPool{
+		if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) == 0{
+			RemoveIdx[1] = append(RemoveIdx[1], idx)
+		} else if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) != 0{
+			wrongIdx[1] = append(wrongIdx[1], idx)
+		}
+	}
+	for idx, v := range optimizePool{
+		if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) == 0{
+			RemoveIdx[2] = append(RemoveIdx[2], idx)
+		} else if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) != 0{
+			wrongIdx[2] = append(wrongIdx[2], idx)
+		}
+	}
 	// check whether it should be sent into next stage
-
+	for k, v := range RemoveIdx{
+		for _, v2 := range v{
+			if k == 1{
+				sliceElement := semanticPool[v2]
+				addCodegen(sliceElement.uuid, sliceElement.repo)
+				semanticPool = append(semanticPool[0:v2], semanticPool[v2+1:]...)
+			}
+			if k == 2{
+				sliceElement := codegenPool[v2]
+				addCodegen(sliceElement.uuid, sliceElement.repo)
+				codegenPool = append(codegenPool[0:v2], codegenPool[v2+1:]...)
+			}
+			if k == 3{
+				sliceElement := optimizePool[v2]
+				addCodegen(sliceElement.uuid, sliceElement.repo)
+				optimizePool = append(optimizePool[0:v2], optimizePool[v2+1:]...)
+			}
+		}
+	}
+	// add the judge result into database
+	var commandStr string
+	for _, v := range array{
+		commandStr = "INSERT INTO judgeDetail(uuid, judger, judgeTime, subworkId, testcase, result, type) VALUES ("
+		dataString := v.Uuid + "," + v.Judger + "," + v.JudgeTime + "," + v.SubworkId + "," + v.TestCase + "," + strings.Join(v.JudgeResult, "/") + "," + fmt.Sprintf("%d)", v.Judgetype)
+		commandStr += dataString
+		_, err := executionExec(commandStr)
+		if err != nil{
+			trace.Log(context.Background(), "submitTask-SQL", err.Error())
+		}
+	}
 }
 
-
-
 func main() {
-	http.HandleFunc("/fetchRepo", getUserList) // Get
+	db, err := sql.Open("mysql", "client:password1A@tcp(127.0.0.1:3306)/compiler")
+	if err != nil{
+		fmt.Printf("runtime Error: %s", err.Error())
+		return
+	}
+	if db == nil{
+		fmt.Printf("runtime Error: Database open failed.(db is nil)")
+		return
+	}
+	defer db.Close()
+	http.HandleFunc("/fetchRepo", getUserList) // Get test ok!
 	http.HandleFunc("/fetchTask", getTask) // Get
-	http.HandleFunc("/addUser", addUser) // Post
+	http.HandleFunc("/addUser", addUser) // Post test ok!
 	http.HandleFunc("/requestJudge", reqJudge) // Post
-	http.HandleFunc("/addData", addData) // Post
+	http.HandleFunc("/addDataSemantic", addDataSemantic) // Post semantic data test ok!
+	http.HandleFunc("/addDataCodegen", addDataCodegen)// Post
 	http.HandleFunc("/removeData", removeData) // Post
 	http.HandleFunc("/submitTask", submitTask)
-	fmt.Print("Start to serve")
+	fmt.Print("Start to serve\n")
 	http.ListenAndServe(":10430", nil)
 }

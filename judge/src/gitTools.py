@@ -1,4 +1,4 @@
-from .ConfigDeploy import Config_Dict
+from ConfigDeploy import Config_Dict
 import subprocess
 import time
 

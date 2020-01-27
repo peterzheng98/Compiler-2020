@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nats-io/nuid"
 	"net/http"
 	"strings"
 )
@@ -51,25 +52,35 @@ func headers(w http.ResponseWriter, req *http.Request) {
 	}
 
 }
-
+var nd = nuid.New()
 func main() {
 	var rtt []int
 	rtt = append(rtt, 1, 2)
-	fmt.Print(rtt)
+	//fmt.Print(rtt)
 	rtt = append(rtt[1:])
-	fmt.Print(rtt)
+	//fmt.Print(rtt)
 	rtt = append(rtt[1:])
-	fmt.Print(rtt)
+	//fmt.Print(rtt)
 	//需要先导入strings包
 	s1 := "字符串"
+	fmt.Printf("\n[%s]\n", nd.Next())
+	fmt.Printf("\n[%s]\n", nuid.New().Next())
+	fmt.Printf("\n[%s]\n", nuid.New().Next())
+
 	s2 := "拼接"
 	//定义一个字符串数组包含上述的字符串
 	var str []string = []string{s1, s2}
 	//调用Join函数
 	s3 := strings.Join(str, " OR id=")
 	fmt.Print(s3)
-	http.HandleFunc("/hello", hello)
-	http.HandleFunc("/headers", headers)
+	rtt = append(rtt, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+	for k, v := range rtt{
+		fmt.Printf("%d->%d %s\n", k, v, rtt)
+		rtt = append(rtt[0:k], rtt[k+1:]...)
 
-	http.ListenAndServe(":8090", nil)
+	}
+	//http.HandleFunc("/hello", hello)
+	//http.HandleFunc("/headers", headers)
+	//
+	//http.ListenAndServe(":8090", nil)
 }

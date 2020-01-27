@@ -1,9 +1,9 @@
-from .ConfigDeploy import Config_Dict
-from .initalSet import initDatabase
-from .validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
-from .dockerTools import existImage, cleanDocker, makeContainer, C
-from .judgeTools import judgeSemantic, judgeCodeGen
-from .gitTools import updateRepo, getGitHash
+from ConfigDeploy import Config_Dict
+from initalSet import initDatabase
+from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
+from dockerTools import existImage, cleanDocker, makeContainer, C
+from judgeTools import judgeSemantic, judgeCodeGen
+from gitTools import updateRepo, getGitHash
 import sys
 import docker
 import requests
@@ -96,13 +96,14 @@ if __name__ == '__main__':
     r = requests.get(url)
     userList_Dict = r.json()
     RetryCount = 0
-    while len(userList_Dict) or userList_Dict['status'] != 200:
-        print('Retry #{}: Request again after 1s.'.format(RetryCount))
-        genLog('Retry #{}: Request again after 1s.'.format(RetryCount))
+    while len(userList_Dict) == 0 or userList_Dict['code'] != 200:
+        print('Retry #{}: Request again after 1s. Last receive: {}'.format(RetryCount, userList_Dict))
+        genLog('Retry #{}: Request again after 1s. Last receive: {}'.format(RetryCount, userList_Dict))
         time.sleep(1)
         url = Config_Dict['serverFetchUser']
         r = requests.get(url)
         userList_Dict = r.json()
+        RetryCount = RetryCount + 1
     userList_Dict = userList_Dict['message']
     print('  User list fetched, %d records.' % (len(userList_Dict)))
     genLog('=' * 20 + '\nUser list fetched, %d records.' % (len(userList_Dict)))
