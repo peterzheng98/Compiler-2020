@@ -1,0 +1,3 @@
+[submodule "testcase"]
+	path = testcase
+	url = https://github.com/peterzheng98/Compiler-2020-testcases
