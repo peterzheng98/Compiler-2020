@@ -1,5 +1,7 @@
 # Compiler 2020 Manual
 
+补充1: 支持的语言列表请到Issue #24查看。
+
 - [Compiler 2020 Manual](#compiler-2020-manual)
     + [Manual File Information](#manual-file-information)
     + [About the course](#about-the-course)
