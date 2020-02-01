@@ -1,3 +1,6 @@
 [submodule "testcase"]
 	path = testcase
 	url = https://github.com/peterzheng98/Compiler-2020-testcases
+[submodule "local-judge"]
+	path = local-judge
+	url = https://github.com/peterzheng98/Compiler-2020-local-judge.git
