@@ -56,7 +56,7 @@
 
 ### Manual File Information
 
-Created: 2019-10-13	Last Update: 2020-01-30v6.0.1	*Pre-release - v6.0.1*
+Created: 2019-10-13	Last Update: 2020-02-02v6.0.2	*Pre-release - v6.0.2*
 
 目前仍然是非正式发布。并非最终版本！！！！！该安排没有获得俞老师批准，属于完全非官方性质！ 
 
@@ -392,15 +392,33 @@ foo test(){ return this; }
 
 此处的变量不是类成员变量，类成员变量的定义参阅类的定义。变量声明语句语法如下：
 
-`<Type 1> <MemberIdentifier 1>, <MemberIdentifier 2>;`
+`<Type 1> <VariableIdentifier 1>, <VariableIdentifier 2>;`
 
 或者
 
-`<Type> <MemberIdentifier 1> = <Initial Expression>;`
+`<Type> <VariableIdentifier 1> = <Initial Expression>;`
 
 变量在使用之前应当被赋值了，没有赋值的对象直接使用是未定义行为，在一行里对多个参量进行声明赋值是未定义行为。
 
 举例：`int a = 0, b = 0;` 这是未定义的。
+
+对于自定义类的对象声明如果没有进行`new`的实例化操作，默认为null，允许没有赋初值的对象（此时为`null`，保证仅出现在semantic检查阶段）。
+
+举例：
+
+``````c++
+class A{
+  int a;
+};
+
+A a; // 此时a为null，视为语法正确
+int t = a.a; // 语法正确
+``````
+
+实例化操作的语法应当为：`<Type> <VariableIdentifier> = new <Type>();` 或者 `<Type> <VariableIdentifier> = new <Type>;`
+
+即圆括号可以省略。
+
 
 #### **11.2 条件语句**
 
