@@ -20,6 +20,11 @@ type sendFormat struct {
 	Message map[string]string `json:"message"`
 }
 
+type userLoginFormat struct{
+	StuID string `json:stu_id`
+	StuPassword string `json:stu_name`
+}
+
 type userAddFormat struct{
 	StuId string `json:"stu_id"`
 	StuRepo string `json:"stu_repo"`
@@ -175,6 +180,18 @@ func getUserList(w http.ResponseWriter, r *http.Request){
 	//_, _ = fmt.Fprint(w, sendMap)
 	fmt.Printf("\t[√] send: %s\n", sendMap)
 }
+
+func loginUser(w http.ResponseWriter, r *http.Request){
+	var record userLoginFormat
+	err := json.NewDecoder(r.Body).Decode(&record)
+	if err != nil{
+		fmt.Printf("runtime error: not success in login user, host: %s, message: %s", r.Host, r.Body)
+		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
+	}
+	
+
+}
+
 // /addUser test ok!
 func addUser(w http.ResponseWriter, r *http.Request){
 	// Debug stage
@@ -186,7 +203,7 @@ func addUser(w http.ResponseWriter, r *http.Request){
 		_, _ = fmt.Fprintf(w, "{\"code\":400, \"message\": \"%s\"}", err.Error())
 	}
 	userNNID := user_nuid.Next()
-	userRealNNID := fmt.Sprint(record.StuId)[9:] + userNNID
+	userRealNNID := fmt.Sprint(record.StuId)
 
 	cmd := fmt.Sprintf("INSERT INTO UserDatabase(stu_uuid, stu_id, stu_repo, stu_name, stu_password, stu_email) VALUES ('%s', '%s', '%s', '%s', '%s', '%s');", userRealNNID, record.StuId, record.StuRepo, record.StuName, record.StuPassword, record.StuEmail)
 	fmt.Printf("\t[*] [addUser] Execute SQL Command:%s\n", cmd)
@@ -803,6 +820,7 @@ func main() {
 	http.HandleFunc("/addDataCodegen", addDataCodegen)// Post
 	http.HandleFunc("/removeData", removeData) // Post
 	http.HandleFunc("/submitTask", submitTask)
+	http.HandleFunc("/loginUser", loginUser)
 	fmt.Print("Start to serve\n")
 	http.ListenAndServe(":10430", nil)
 }

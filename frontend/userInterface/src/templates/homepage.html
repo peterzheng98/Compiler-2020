@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}Homepage{% endblock %}
+{% block content %}
+    <div class="jumbotron">
+        <div class="row">
+            <div class="col-md-8">
+                <h1>{{ homepage_title | safe }}</h1>
+                {{ homepage_description | safe }}
+            </div>
+            <div class="col-md-4">
+        </div>
+    </div>
+    </div>
+{% endblock %}
