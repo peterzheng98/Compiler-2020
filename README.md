@@ -1,6 +1,7 @@
 # Compiler 2020 Manual
 
 补充1: 支持的语言列表请到Issue #24查看。
+补充2: 测试点信息：Semantic Check：180    Code generation：78   Optimization Test：0
 ## 特大利好: Semantic阶段本地Judge已经搭建完成，欢迎测试！
 
 - [Compiler 2020 Manual](#compiler-2020-manual)
