@@ -1,7 +1,11 @@
 # Compiler 2020 Manual
 
 补充1: 支持的语言列表请到Issue #24查看。
-补充2: 测试点信息：Semantic Check：180    Code generation：78   Optimization Test：0
+
+补充2: 测试点信息：Semantic Check：183(+3, Feb 11)    Code generation：78   Optimization Test：0
+
+信息：最新测试集合GitHash `07ef9ae94e730b22b0eaa026a9a01528e0ec0386` 最后更新：2020年2月11日
+
 ## 特大利好: Semantic阶段本地Judge已经搭建完成，欢迎测试！
 
 - [Compiler 2020 Manual](#compiler-2020-manual)
@@ -57,7 +61,7 @@
 
 ### Manual File Information
 
-Created: 2019-10-13	Last Update: 2020-02-05v6.0.3	*Pre-release - v6.0.3*
+Created: 2019-10-13	Last Update: 2020-02-11v6.0.4	*Pre-release - v6.0.4*
 
 目前仍然是非正式发布。并非最终版本！！！！！该安排没有获得俞老师批准，属于完全非官方性质！ 
 
@@ -371,9 +375,26 @@ foo test(){ return this; }
 
 #### **9.3 函数返回值**
 
-如果函数声明的返回值不是`void`，就必须有`return`语句返回函数返回值，反之语法错误。（例外：`main`函数例外，可以没有返回值，此时返回值为0。）如果函数声明的返回值是`void`，`return`语句后必须单独出现表示从此位置跳出函数（`return;`），反之语法错误。
+如果函数声明的返回值不是`void`，就必须有`return`语句返回函数返回值，反之语法错误。（例外：`main`函数例外，可以没有返回值，此时返回值为0。）
+
+如果函数声明的返回值是`void`，`return`语句后必须单独出现表示从此位置跳出函数（`return;`），反之语法错误。
 
 特别地，在Semantic Check阶段，为了简化流程，只要检查某个函数中是否存在`return`语句并且对应的返回值正确即视为语法正确。
+
+**（6.0.4更新：补充：返回值可以是自定义类，可以是数组，可以是自定义类的数组。对于数组类型的返回值需要检查维数是否正确，也就是2维数组不可以返回给1维数组，保证维度上长度一定是匹配的。）**
+
+例如：以下的情况不会出现在测试点中：
+
+``````c++
+int[] foo(int args){
+  return new int[args];
+}
+
+int main(){
+  int[] vec = foo(10);
+  return vec[11]; // Out-of-range Exception.
+}
+``````
 
 ### **10 表达式：**
 
@@ -549,6 +570,8 @@ for(;;) int a = 0;
 ### **14** **命名空间：**
 
 所有符号共享一个命名空间，所以在同一个作用域里，变量，函数，和class，都不能同名如果重名视为语法错误，注意作用域规则。
+
+**（6.0.4更新：简单来说，变量和函数是可以重名的，但是类是不可以和变量重名的。）**
 
 ### **15** **左值：**
 
