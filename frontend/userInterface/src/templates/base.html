@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ webconfig.title }}</title>
+
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static', filename='popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            background: #eeeeee;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column">
+<div id="page-content" style="flex: 1 0 auto">
+    {% include "header.html" %}
+    {% block content %}
+    {% endblock %}
+</div>
+{% include "footer.html" %}
+</body>
+
+</html>

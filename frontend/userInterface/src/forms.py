@@ -3,6 +3,7 @@ from flask_wtf import FlaskForm
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 from wtforms import *
 
+
 class LoginForm(FlaskForm):
     userid = StringField(
         'StuID', validators=[DataRequired()], render_kw={
