@@ -88,9 +88,17 @@ def compiler_list():
 @login_required
 def request_judge():
     try:
+        request_user_information = {
+            'stu_id': current_user.useruuid,
+            'stu_password': '12345'
+        }
+        r = HTTPReq.post(path.fetchUuidPath, data=json.dumps(request_user_information), timeout=2)
+        if r.json()['code'] != 200:
+            flash('Error in requesting judge, error code:{}'.format(r.json()['code']))
+            return redirect('/compiler_list')
         request_judge_json = {
             'uuid': current_user.useruuid,
-            'repo': '1'
+            'repo': r.json()['message']['userrepo']
         }
         r = HTTPReq.post(path.requestJudgePath, timeout=2, data=json.dumps(request_judge_json))
         if r.json()['code'] != 200:
