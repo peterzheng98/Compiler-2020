@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-1"></div>
+        <div class="col-md-10 card card-body">
+            {% if content_title != '' %}
+                <h2>{{ content_title }}</h2>
+            {% endif %}
+            <table class="table table-bordered table-condensed table-hover">
+                {% for rows in table_content %}
+                    <tr align="center" valign="middle">
+                        <td valign="middle" align="left">
+                            {{ rows[0] }}
+                        </td>
+                        <td valign="middle" align="left">
+                            {{ rows[1] }}
+                        </td>
+                        <td valign="middle" align="left">
+                            {{ rows[2] }}
+                        </td>
+                        <td valign="middle" align="left">
+                            {{ rows[3] }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+{% endblock %}

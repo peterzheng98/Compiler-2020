@@ -12,7 +12,7 @@
                         <i class="fas fa-home"></i> Home
                     </a>
                 </li>
-                {% if current_user == 1 %}
+                {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="/compiler_list">
                             <i class="fas fa-list"></i> Compiler List
@@ -41,7 +41,7 @@
                 {% endif %}
             </ul>
 
-            {% if current_user == 1 %}
+            {% if current_user.is_authenticated %}
                 <ul class="navbar-nav navbar-right">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"

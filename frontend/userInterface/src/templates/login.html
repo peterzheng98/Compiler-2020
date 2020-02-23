@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4 ml-5 mr-5">
+            <div class="card card-body">
+                <form action="/login" method="post"
+                      onkeydown="if (event.keyCode == 13) { $('#submit_login').click(); return false; }">
+                    {{ loginForm.userid }}<br>
+                    {{ loginForm.userpassword }}<br>
+                    {{ loginForm.submit }}
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

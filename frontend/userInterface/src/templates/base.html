@@ -22,6 +22,17 @@
 <body class="d-flex flex-column">
 <div id="page-content" style="flex: 1 0 auto">
     {% include "header.html" %}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="container">
+                <div class="alert alert-warning">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    {% endwith %}
     {% block content %}
     {% endblock %}
 </div>

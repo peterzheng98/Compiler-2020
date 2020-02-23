@@ -8,20 +8,21 @@ class LoginForm(FlaskForm):
     userid = StringField(
         'StuID', validators=[DataRequired()], render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever'
+            'placeholder': 'Your Student ID'
         }
     )
 
     userpassword = PasswordField(
         'Password', validators=[DataRequired()], render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever'
+            'placeholder': 'Your Password'
         }
     )
 
     submit = SubmitField(
         'Login', render_kw={
-            'class': "btn btn-primary"
+            'class': "btn btn-primary",
+            'id': "submit_login"
         }
     )
 
