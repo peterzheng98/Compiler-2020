@@ -2,14 +2,23 @@
 
 {% block content %}
     <div class="row">
-        <div class="col-md-1"></div>
-        <div class="col-md-10 card card-body">
+        <div class="container card card-body">
             {% if content_title != '' %}
                 <h2>{{ content_title }}</h2>
             {% endif %}
-            <table class="table table-bordered table-condensed table-hover">
+            <table class="table table-bordered table-condensed table-striped">
+                <thead>
+                <tr>
+                    {% for rows in table_header %}
+                        <th>{{ rows }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
                 {% for rows in table_content %}
-                    <tr align="center" valign="middle">
+                    <tr align="center" valign="middle" {% if rows[3] != 0 %}
+                        class="{{ rows[5] }}"
+                    {% endif %} >
                         <td valign="middle" align="left">
                             {{ rows[0] }}
                         </td>
@@ -20,10 +29,11 @@
                             {{ rows[2] }}
                         </td>
                         <td valign="middle" align="left">
-                            {{ rows[3] }}
+                            {{ rows[4] }}
                         </td>
                     </tr>
                 {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>

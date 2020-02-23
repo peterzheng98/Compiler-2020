@@ -6,6 +6,7 @@ from flask_nav.elements import *
 from flask_login import current_user, login_required, login_user, logout_user, LoginManager
 import requests as HTTPReq
 import subprocess
+import json
 
 from forms import LoginForm
 from tools import validator
@@ -26,7 +27,7 @@ login_manager.init_app(app)
 login_manager.login_message = 'Please login first.'
 login_manager.login_message_category = 'error'
 login_manager.session_protection = 'strong'
-login_manager.login_view = 'auth.login'
+login_manager.login_view = '/'
 
 
 @login_manager.user_loader
@@ -65,21 +66,42 @@ def compiler_list():
         r = HTTPReq.get(path.getUserListPath, timeout=2)
         if r.json()['code'] == 200:
             table_content = [v for k, v in r.json()['message'].items()]
+            for idx, n in enumerate(table_content):
+                n[3] = int(n[3])
+                n.append(validator.idx2stage(n[3]))
+                n.append(validator.idx2class(n[3]))
+            table_header = ['ID', 'Name', 'Repo Address', 'Stage']
             return render_template('lists.html', webconfig={'title': 'Compiler Lists - Compiler 2020'},
                                    content_title='Compiler Lists',
-                                   table_content=table_content)
+                                   table_content=table_content,
+                                   table_header=table_header)
         else:
             return render_template('lists.html', webconfig={'title': 'Compiler Lists - Compiler 2020'},
-                                   content_title='Error occurred.', table_content=[])
+                                   content_title='Error occurred.', table_content=[], table_header=[])
     except Exception as identifier:
         print('-> Error: {}'.format(identifier))
         return render_template('lists.html', webconfig={'title': 'Compiler Lists - Compiler 2020'},
-                               content_title='Error occurred.', table_content=[])
+                               content_title='Error occurred.', table_content=[], table_header=[])
 
 
-@app.route('/products/<product>')
-def products(product):
-    return 'product: ' + str(product)
+@app.route('/req_judge')
+@login_required
+def request_judge():
+    try:
+        request_judge_json = {
+            'uuid': current_user.useruuid,
+            'repo': '1'
+        }
+        r = HTTPReq.post(path.requestJudgePath, timeout=2, data=json.dumps(request_judge_json))
+        if r.json()['code'] != 200:
+            flash('Error in requesting judge, error code:{}'.format(r.json()['code']))
+            return redirect('/compiler_list')
+        flash('Judge in queue.')
+        return redirect('/compiler_list')
+    except Exception as identifier:
+        flash('Error in requesting judge. Please try again later. {}'.format(identifier))
+        return redirect('/compiler_list')
+
 
 
 @app.route('/logout')
