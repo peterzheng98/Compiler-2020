@@ -59,22 +59,34 @@ def login_app():
         return redirect('/')
 
 
-@app.route('/judge_list/<string:page>')
+@app.route('/judge/detail/<string:page>')
+@login_required
+def judge_detail(page: str):
+    if not validator.isAllDigits(page):
+        flash('Invalid request for detail:[{}]'.format(page))
+        return redirect('/judge/list/0')
+    return 'Request detail: {}'.format(page)
+
+
+@app.route('/judge/list/<string:page>')
 @login_required
 def judge_list(page: str):
     try:
         if not validator.isAllDigits(page):
-            return redirect('/judge_list/0')
+            return redirect('/judge/list/0')
         current_page = int(page)
-        send_data = [current_page, 15]
+        current_idx = int(page) * 15
+        send_data = [current_idx, 15]
         r = HTTPReq.post(path.fetchStatusPath, timeout=2, data=json.dumps(send_data))
+        prev_page = max(0, current_page - 1)
+        next_page = current_page + 1
         if r.json()['code'] == 200:
             table_content = [v for k, v in r.json()['message'].items()]
             table_header = ['#', 'StuID', 'Submit Hash', 'Stage', 'Judge Time']
             return render_template('judge_status.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
                                    content_title='Judge Status',
                                    table_content=table_content,
-                                   table_header=table_header)
+                                   table_header=table_header, prev_page=prev_page, next_page=next_page)
         else:
             return render_template('judge_status.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
                                    content_title='Error occurred.', table_content=[], table_header=[])
@@ -84,7 +96,7 @@ def judge_list(page: str):
                                content_title='Error occurred.', table_content=[], table_header=[])
 
 
-@app.route('/compiler_list')
+@app.route('/compiler/list')
 @login_required
 def compiler_list():
     try:

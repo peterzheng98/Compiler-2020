@@ -17,7 +17,7 @@
                 <tbody>
                 {% for rows in table_content %}
                     <td valign="middle" align="left">
-                        <font size="-1"> {{ rows[4] }}</font>
+                        <a href="/judge/detail/{{ rows[4] }}"><font size="-1"> {{ rows[4] }}</font></a>
                     </td>
                     <td valign="middle" align="left">
                         <font size="-1">
@@ -66,6 +66,10 @@
                 {% endfor %}
                 </tbody>
             </table>
+            <div class="btn-group" role="group" aria-label="Page Control">
+                <button type="button" class="btn btn-primary" onclick="location.href='/judge/list/{{ prev_page }}'">Previous Page</button>
+                <button type="button" class="btn btn-secondary" onclick="location.href='/judge/list/{{ next_page }}'">Next Page</button>
+              </div>
         </div>
     </div>
 
