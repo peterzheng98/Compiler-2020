@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="container card card-body">
+            {% if content_title != '' %}
+                <h2>{{ content_title }}</h2>
+            {% endif %}
+            <table class="table table-bordered table-condensed table-striped">
+                <thead>
+                <tr>
+                    {% for rows in table_header %}
+                        <th>{{ rows }}</th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                {% for rows in table_content %}
+                    <td valign="middle" align="left">
+                        <font size="-1"> {{ rows[4] }}</font>
+                    </td>
+                    <td valign="middle" align="left">
+                        <font size="-1">
+                            {{ rows[0] }}
+                        </font>
+                    </td>
+                    <td valign="middle" align="left">
+                        <font size="-1">
+                            {{ rows[1] }}</font>
+                    </td>
+
+                    {% if rows[2] == '0' %}
+                        <td valign="middle" align="left" class="table-warning">
+                            <font size="-1">
+                                Fail
+                                </font>
+
+                        </td>
+                    {% endif %}
+                    {% if rows[2] == '1' %}
+                        <td valign="middle" align="left" class="table-success">
+                            <font size="-1">
+                                Pass
+                                </font>
+                        </td>
+                    {% endif %}
+                    {% if rows[2] == '2' %}
+                        <td valign="middle" align="left" class="table-primary">
+                            <font size="-1">
+                                Running
+                                </font>
+                        </td>
+                    {% endif %}
+                    {% if rows[2] == "-1" %}
+                        <td valign="middle" align="left" class="table-info">
+                            <font size="-1">
+                                Pending
+                                </font>
+                        </td>
+                    {% endif %}
+
+                    <td valign="middle" align="left">
+                        <font size="-1"> {{ rows[3] }}</font>
+                    </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}

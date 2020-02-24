@@ -59,6 +59,31 @@ def login_app():
         return redirect('/')
 
 
+@app.route('/judge_list/<string:page>')
+@login_required
+def judge_list(page: str):
+    try:
+        if not validator.isAllDigits(page):
+            return redirect('/judge_list/0')
+        current_page = int(page)
+        send_data = [current_page, 15]
+        r = HTTPReq.post(path.fetchStatusPath, timeout=2, data=json.dumps(send_data))
+        if r.json()['code'] == 200:
+            table_content = [v for k, v in r.json()['message'].items()]
+            table_header = ['#', 'StuID', 'Submit Hash', 'Stage', 'Judge Time']
+            return render_template('judge_status.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
+                                   content_title='Judge Status',
+                                   table_content=table_content,
+                                   table_header=table_header)
+        else:
+            return render_template('judge_status.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
+                                   content_title='Error occurred.', table_content=[], table_header=[])
+    except Exception as identifier:
+        print('-> Error: {}'.format(identifier))
+        return render_template('judge_status.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
+                               content_title='Error occurred.', table_content=[], table_header=[])
+
+
 @app.route('/compiler_list')
 @login_required
 def compiler_list():
@@ -109,7 +134,6 @@ def request_judge():
     except Exception as identifier:
         flash('Error in requesting judge. Please try again later. {}'.format(identifier))
         return redirect('/compiler_list')
-
 
 
 @app.route('/logout')

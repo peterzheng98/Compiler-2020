@@ -6,3 +6,4 @@ class PathConfig:
     loginPath = basePath + 'loginUser'
     submitTaskPath = basePath + 'submitTask'
     fetchUuidPath = basePath + 'queryID'
+    fetchStatusPath = basePath + 'fetchStatus'

@@ -21,8 +21,8 @@ type sendFormat struct {
 	Message map[string]string `json:"message"`
 }
 
-type sendFormatWeb struct{
-	Code    int               `json:"code"`
+type sendFormatWeb struct {
+	Code    int                 `json:"code"`
 	Message map[string][]string `json:"message"`
 }
 
@@ -159,12 +159,13 @@ func executionExec(cmd string) (sql.Result, error) {
 	}
 	return result, err
 }
+
 // /fetchRepoWeb
 func getUserListWeb(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[*] Request from: %s\n", r.Host)
 	// Fetch the user list in the database
 	result, err := executionQuery("SELECT stu_id, stu_repo, stu_name, stu_judge_status FROM userDatabase")
-	if result == nil{
+	if result == nil {
 		fmt.Printf("runtime Error: execution with return empty cursor.")
 		return
 	}
@@ -172,14 +173,14 @@ func getUserListWeb(w http.ResponseWriter, r *http.Request) {
 	userDatSent = make(map[string][]string)
 	var index = 0
 	defer result.Close()
-	for result.Next(){
+	for result.Next() {
 		var userUuid string
 		var userRepo string
 		var userName string
 		var userJudge string
 		err = result.Scan(&userUuid, &userRepo, &userName, &userJudge)
 		dataSent := [] string{userUuid, userName, userRepo, userJudge}
-		if err != nil{
+		if err != nil {
 			fmt.Printf("runtime warning:%s when scanning %s", err.Error(), userUuid)
 			_, _ = fmt.Fprint(w, "Internal Error")
 		}
@@ -192,24 +193,23 @@ func getUserListWeb(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
 // /fetchRepo test ok!
 func getUserList(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[*] Request from: %s\n", r.Host)
 	// Fetch the user list in the database
 	result, err := executionQuery("SELECT stu_uuid, stu_repo FROM userDatabase")
-	if result == nil{
+	if result == nil {
 		fmt.Printf("runtime Error: execution with return empty cursor.")
 		return
 	}
 	var userDatSent map[string]string
 	userDatSent = make(map[string]string)
 	defer result.Close()
-	for result.Next(){
+	for result.Next() {
 		var userUuid string
 		var userRepo string
 		err = result.Scan(&userUuid, &userRepo)
-		if err != nil{
+		if err != nil {
 			fmt.Printf("runtime warning:%s when scanning %s", err.Error(), userUuid)
 			_, _ = fmt.Fprint(w, "Internal Error")
 		}
@@ -700,8 +700,49 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 	_, err = fmt.Fprintf(w, "{\"%s\": %d, \"%s\": \"%s\"}", "code", 200, "message", "123")
 }
 
-func removeData(w http.ResponseWriter, r *http.Request) {
+// fetchStatus
+func getJudgeStatus(w http.ResponseWriter, r *http.Request) {
 	// remove the data in the database
+	var array []int
+	err := json.NewDecoder(r.Body).Decode(&array)
+	if err != nil {
+		fmt.Printf("runtime Error: %s", err.Error())
+		// send empty message
+		_, _ = fmt.Fprint(w, "{\"code\": 400, \"message\": \"Unable to decode data\"}")
+		return
+	}
+	var start = array[0]
+	var length = array[1]
+	sqlCmd := fmt.Sprintf("SELECT id, judge_p_useruuid, judge_p_githash, judge_p_verdict, judge_p_judgetime from judgeResult order by id desc limit %d,%d;", start, length)
+	result, err := executionQuery(sqlCmd)
+	if err != nil {
+		fmt.Printf("runtime Error: %s", err.Error())
+		// send empty message
+		_, _ = fmt.Fprint(w, "{\"code\": 400, \"message\": \"Unable to decode data\"}")
+		return
+	}
+	defer result.Close()
+	var result_sent = make(map[string][]string)
+	var index = 0
+	for result.Next(){
+		var user_uuid string
+		var user_githash string
+		var user_verdict string
+		var user_judgetime string
+		var id string
+		err = result.Scan(&id, &user_uuid, &user_githash, &user_verdict, &user_judgetime)
+		dataSent := [] string{user_uuid, user_githash, user_verdict, user_judgetime, id}
+		if err != nil{
+			fmt.Printf("[*]Internal Error, %s", err.Error())
+			continue
+		}
+		result_sent[fmt.Sprint(index)] = dataSent
+		index = index + 1
+	}
+	_ = json.NewEncoder(w).Encode(sendFormatWeb{
+		Code:    200,
+		Message: result_sent,
+	})
 }
 
 func submitTask(w http.ResponseWriter, r *http.Request) {
@@ -931,7 +972,7 @@ func main() {
 	http.HandleFunc("/requestJudge", reqJudge)           // Post
 	http.HandleFunc("/addDataSemantic", addDataSemantic) // Post semantic data test ok!
 	http.HandleFunc("/addDataCodegen", addDataCodegen)   // Post
-	http.HandleFunc("/removeData", removeData)           // Post
+	http.HandleFunc("/fetchStatus", getJudgeStatus)      // Post
 	http.HandleFunc("/submitTask", submitTask)
 	http.HandleFunc("/loginUser", loginUser)
 	http.HandleFunc("/queryID", queryID)
