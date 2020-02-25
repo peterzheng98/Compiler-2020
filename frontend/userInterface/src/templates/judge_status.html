@@ -17,50 +17,50 @@
                 <tbody>
                 {% for rows in table_content %}
                     <td valign="middle" align="left">
-                        <a href="/judge/detail/{{ rows[4] }}"><font size="-1"> {{ rows[4] }}</font></a>
+                        <a href="/judge/detail/{{ rows[4] }}"><div class="custom-small-font"> {{ rows[4] }}</div></a>
                     </td>
                     <td valign="middle" align="left">
-                        <font size="-1">
+                        <div class="custom-small-font">
                             {{ rows[0] }}
-                        </font>
+                        </div>
                     </td>
                     <td valign="middle" align="left">
-                        <font size="-1">
-                            {{ rows[1] }}</font>
+                        <div class="code-font">
+                            {{ rows[1] }}</div>
                     </td>
 
                     {% if rows[2] == '0' %}
                         <td valign="middle" align="left" class="table-warning">
-                            <font size="-1">
+                            <div class="custom-small-font">
                                 Fail
-                                </font>
+                                </div>
 
                         </td>
                     {% endif %}
                     {% if rows[2] == '1' %}
                         <td valign="middle" align="left" class="table-success">
-                            <font size="-1">
+                            <div class="custom-small-font">
                                 Pass
-                                </font>
+                                </div>
                         </td>
                     {% endif %}
                     {% if rows[2] == '2' %}
                         <td valign="middle" align="left" class="table-primary">
-                            <font size="-1">
+                            <div class="custom-small-font">
                                 Running
-                                </font>
+                                </div>
                         </td>
                     {% endif %}
                     {% if rows[2] == "-1" %}
                         <td valign="middle" align="left" class="table-info">
-                            <font size="-1">
+                            <div class="custom-small-font">
                                 Pending
-                                </font>
+                                </div>
                         </td>
                     {% endif %}
 
                     <td valign="middle" align="left">
-                        <font size="-1"> {{ rows[3] }}</font>
+                        <div class="custom-small-font"> {{ rows[3] }}</div>
                     </td>
                     </tr>
                 {% endfor %}

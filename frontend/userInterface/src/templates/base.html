@@ -6,6 +6,7 @@
 
     <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
     <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
     <script src="{{ url_for('static', filename='popper.min.js') }}"></script>
     <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
     <style>
@@ -15,6 +16,19 @@
 
         body {
             background: #eeeeee;
+        }
+
+        .code-font {
+            font-family: 'Fira Code', monospace;
+            font-size: small;
+        }
+
+        .custom-small-font{
+            font-size: small;
+        }
+
+        .custom-xsmall-font{
+            font-size: x-small;
         }
     </style>
 </head>
