@@ -9,7 +9,7 @@ import subprocess
 import json
 
 from forms import LoginForm
-from tools import validator
+from tools import validator, gitTools
 from protocol.users import UserStruct, fetchUserByID
 from protocol.config import PathConfig
 
@@ -59,13 +59,14 @@ def login_app():
         return redirect('/')
 
 
-@app.route('/judge/detail/<string:page>')
+@app.route('/judge/detail/<string:judgeid>')
 @login_required
-def judge_detail(page: str):
-    if not validator.isAllDigits(page):
-        flash('Invalid request for detail:[{}]'.format(page))
+def judge_detail(judgeid: str):
+    if not validator.isAllDigits(judgeid):
+        flash('Invalid operation: {} is an invalid code.'.format(judgeid))
         return redirect('/judge/list/0')
-    return 'Request detail: {}'.format(page)
+    return render_template('judge_detail.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
+                           content_title='Judge Detail for Record #{}'.format(judgeid))
 
 
 @app.route('/judge/list/<string:page>')
@@ -81,7 +82,8 @@ def judge_list(page: str):
         prev_page = max(0, current_page - 1)
         next_page = current_page + 1
         if r.json()['code'] == 200:
-            table_content = [v for k, v in r.json()['message'].items()]
+            max_length = min(15, len(r.json()['message']))
+            table_content = [r.json()['message'][str(i)] for i in range(max_length)]
             table_header = ['#', 'StuID', 'Submit Hash', 'Stage', 'Judge Time']
             return render_template('judge_status.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
                                    content_title='Judge Status',
