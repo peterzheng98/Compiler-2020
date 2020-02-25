@@ -65,8 +65,15 @@ def judge_detail(judgeid: str):
     if not validator.isAllDigits(judgeid):
         flash('Invalid operation: {} is an invalid code.'.format(judgeid))
         return redirect('/judge/list/0')
-    return render_template('judge_detail.html', webconfig={'title': 'Judge Lists - Compiler 2020'},
-                           content_title='Judge Detail for Record #{}'.format(judgeid))
+    passed_attr = 'btn-sm btn-success custom-xsmall-font custom-bold-font'
+    failed_attr = 'btn-sm btn-warning custom-bold-font custom-xsmall-font'
+    return render_template('judge_detail.html', webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
+                           content_title='Details for Record #{}'.format(judgeid),
+                           commit_message='12345\n\n123\n\n123->',
+                           header_list=['#', 'Phase', 'Test case', 'Verdict', 'Compiling Time', 'Execution Cycles'],
+                           record_list=[],
+                           judge_list=[],
+                           prev_page=0)
 
 
 @app.route('/judge/list/<string:page>')

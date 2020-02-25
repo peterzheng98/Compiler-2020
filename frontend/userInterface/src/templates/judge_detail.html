@@ -4,9 +4,74 @@
     <div class="row">
         <div class="container card card-body">
             {% if content_title != '' %}
-                <h2>{{ content_title }}</h2>
+                <h2>{{ content_title }}</h2><br>
             {% endif %}
-
+            <div class="row">
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <h4>Commit Information</h4>
+                    <div class="card-text code-font form-group">
+                        <label>
+                            <textarea class="form-control custom-small-font" style="overflow:hidden; resize:none; " type="text"
+                                      name="commit-message" readonly="readonly" rows="7"
+                                      cols="100%">{{ commit_message }}</textarea>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <div class="card-text custom-small-font">
+                        <h4>&nbsp;</h4>
+                        <table class="table">
+                            <thead>
+                            <th>Phase</th>
+                            <th>Judge Result</th>
+                            <th>Rate</th>
+                            </thead>
+                            <tbody>
+                            {% for phase in judge_list %}
+                                <tr>
+                                    <td>{{ phase[0] }}</td>
+                                    <td>{{ phase[1] }}</td>
+                                    <td>{{ phase[2] }}</td>
+                            {% endfor %}
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div align="right">
+                            <button type="button" class="btn-sm btn-primary"
+                                    onclick="location.href='/judge/list/{{ prev_page }}'">Go Back
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-3">
+                <div class="col-md-12 col-xs-12 col-sm-12">
+                    <h4>Judgement Protocol</h4>
+                    <div class="custom-small-font">
+                        <table class="table table-striped">
+                            <thead>
+                            {% for header_ctx in header_list %}
+                                <th>{{ header_ctx }}</th>
+                            {% endfor %}
+                            </thead>
+                            <tbody>
+                            {% for record in record_list %}
+                                <tr>
+                                    {% for data in record %}
+                                        <td>
+                                            <div class="{{ data[0] }}">
+                                                <a href="{{ data[1] }}">
+                                                    {{ data[2] }}
+                                                </a>
+                                            </div>
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
