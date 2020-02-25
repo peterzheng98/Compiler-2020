@@ -157,6 +157,16 @@ def request_judge():
         return redirect('/compiler/list')
 
 
+@app.route('/ranking')
+@login_required
+def get_ranking():
+    table_header = ['Name', 'Score']
+    for i in range(100):
+        table_header.append('#{}'.format(i))
+    return render_template('ranking.html', webconfig={'title': 'Ranking - Compiler 2020'},
+                           content_title='Ranking', table_header=table_header, table_content=[])
+
+
 @app.route('/logout')
 def logout():
     logout_user()

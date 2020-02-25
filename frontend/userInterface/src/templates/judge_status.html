@@ -16,60 +16,67 @@
                 </thead>
                 <tbody>
                 {% for rows in table_content %}
-                    <td valign="middle" align="left">
-                        <a href="/judge/detail/{{ rows[4] }}"><div class="custom-small-font"> {{ rows[4] }}</div></a>
-                    </td>
-                    <td valign="middle" align="left">
-                        <div class="custom-small-font">
-                            {{ rows[0] }}
-                        </div>
-                    </td>
-                    <td valign="middle" align="left">
-                        <div class="code-font">
-                            {{ rows[1] }}</div>
-                    </td>
+                    <tr>
+                        <td valign="middle" align="left">
+                            <a href="/judge/detail/{{ rows[4] }}">
+                                <div class="custom-small-font"> {{ rows[4] }}</div>
+                            </a>
+                        </td>
+                        <td valign="middle" align="left">
+                            <div class="custom-small-font">
+                                {{ rows[0] }}
+                            </div>
+                        </td>
+                        <td valign="middle" align="left">
+                            <div class="code-font">
+                                {{ rows[1] }}</div>
+                        </td>
 
-                    {% if rows[2] == '0' %}
-                        <td valign="middle" align="left" class="table-warning">
-                            <div class="custom-small-font">
-                                Fail
+                        {% if rows[2] == '0' %}
+                            <td valign="middle" align="left" class="table-warning">
+                                <div class="custom-small-font">
+                                    Fail
                                 </div>
 
-                        </td>
-                    {% endif %}
-                    {% if rows[2] == '1' %}
-                        <td valign="middle" align="left" class="table-success">
-                            <div class="custom-small-font">
-                                Pass
+                            </td>
+                        {% endif %}
+                        {% if rows[2] == '1' %}
+                            <td valign="middle" align="left" class="table-success">
+                                <div class="custom-small-font">
+                                    Pass
                                 </div>
-                        </td>
-                    {% endif %}
-                    {% if rows[2] == '2' %}
-                        <td valign="middle" align="left" class="table-primary">
-                            <div class="custom-small-font">
-                                Running
+                            </td>
+                        {% endif %}
+                        {% if rows[2] == '2' %}
+                            <td valign="middle" align="left" class="table-primary">
+                                <div class="custom-small-font">
+                                    Running
                                 </div>
-                        </td>
-                    {% endif %}
-                    {% if rows[2] == "-1" %}
-                        <td valign="middle" align="left" class="table-info">
-                            <div class="custom-small-font">
-                                Pending
+                            </td>
+                        {% endif %}
+                        {% if rows[2] == "-1" %}
+                            <td valign="middle" align="left" class="table-info">
+                                <div class="custom-small-font">
+                                    Pending
                                 </div>
-                        </td>
-                    {% endif %}
+                            </td>
+                        {% endif %}
 
-                    <td valign="middle" align="left">
-                        <div class="custom-small-font"> {{ rows[3] }}</div>
-                    </td>
+                        <td valign="middle" align="left">
+                            <div class="custom-small-font"> {{ rows[3] }}</div>
+                        </td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
             <div class="btn-group" role="group" aria-label="Page Control">
-                <button type="button" class="btn btn-primary" onclick="location.href='/judge/list/{{ prev_page }}'">Previous Page</button>
-                <button type="button" class="btn btn-secondary" onclick="location.href='/judge/list/{{ next_page }}'">Next Page</button>
-              </div>
+                <button type="button" class="btn btn-primary" onclick="location.href='/judge/list/{{ prev_page }}'">
+                    Previous Page
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="location.href='/judge/list/{{ next_page }}'">
+                    Next Page
+                </button>
+            </div>
         </div>
     </div>
 
