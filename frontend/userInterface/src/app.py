@@ -132,7 +132,7 @@ def request_judge():
         r = HTTPReq.post(path.fetchUuidPath, data=json.dumps(request_user_information), timeout=2)
         if r.json()['code'] != 200:
             flash('Error in requesting judge, error code:{}'.format(r.json()['code']))
-            return redirect('/compiler_list')
+            return redirect('/compiler/list')
         request_judge_json = {
             'uuid': current_user.useruuid,
             'repo': r.json()['message']['userrepo']
@@ -140,12 +140,12 @@ def request_judge():
         r = HTTPReq.post(path.requestJudgePath, timeout=2, data=json.dumps(request_judge_json))
         if r.json()['code'] != 200:
             flash('Error in requesting judge, error code:{}'.format(r.json()['code']))
-            return redirect('/compiler_list')
+            return redirect('/compiler/list')
         flash('Judge in queue.')
-        return redirect('/compiler_list')
+        return redirect('/compiler/list')
     except Exception as identifier:
         flash('Error in requesting judge. Please try again later. {}'.format(identifier))
-        return redirect('/compiler_list')
+        return redirect('/compiler/list')
 
 
 @app.route('/logout')
