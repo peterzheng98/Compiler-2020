@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4 ml-5 mr-5">
+            <div class="card card-body">
+                <form action="/register" method="post"
+                      onkeydown="if (event.keyCode == 13) { $('#submit_login').click(); return false; }">
+                    {{ registerForm.userid }}<br>
+                    {{ registerForm.password }}<br>
+                    {{ registerForm.password2 }}<br>
+                    {{ registerForm.email }}<br>
+                    {{ registerForm.student_name }}<br>
+                    {{ registerForm.repo_url }}<br>
+                    {{ registerForm.submit }}
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

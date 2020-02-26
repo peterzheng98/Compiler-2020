@@ -8,14 +8,13 @@ import requests as HTTPReq
 import subprocess
 import json
 
-from forms import LoginForm
+from forms import LoginForm, RegistrationForm
 from tools import validator, gitTools
 from protocol.users import UserStruct, fetchUserByID
 from protocol.config import PathConfig
 
 path = PathConfig()
 
-auth = Blueprint('auth', __name__)
 app = Flask(__name__)
 app.config["SECRET_KEY"] = 'pikachu-loves-watermelon'
 Bootstrap(app)
@@ -165,6 +164,47 @@ def get_ranking():
         table_header.append('#{}'.format(i))
     return render_template('ranking.html', webconfig={'title': 'Ranking - Compiler 2020'},
                            content_title='Ranking', table_header=table_header, table_content=[])
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect('/')
+    registerForm = RegistrationForm()
+    if request.method == 'GET':
+        return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+    else:
+        userid = request.form.get('userid')
+        password = request.form.get('password')
+        password2 = request.form.get('password2')
+        email = request.form.get('email')
+        student_name = request.form.get('student_name')
+        repo_url = request.form.get('repo_url')
+        if '@' not in email:
+            flash('Your email is invalid.')
+            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+        if password != password2:
+            flash('Password doesn\'t match')
+            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+        reg_data = {
+            'stu_id': userid,
+            'stu_password': password,
+            'stu_repo': repo_url,
+            'stu_name': student_name,
+            'stu_email': email
+        }
+        try:
+            r = HTTPReq.post(path.registerPath, data=json.dumps(reg_data), timeout=5)
+            if r.json()['code'] != 200:
+                flash('Error occurred! {}'.format(r.json()['message']))
+                return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+            flash('Register Successfully!')
+            return redirect('/login')
+        except Exception as identifier:
+            flash('Error occurred! {}'.format(identifier))
+            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+
+
 
 
 @app.route('/logout')

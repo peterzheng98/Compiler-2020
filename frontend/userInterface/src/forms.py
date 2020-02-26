@@ -32,7 +32,7 @@ class RegistrationForm(FlaskForm):
         'StuID', validators=[DataRequired()],
         render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever',
+            'placeholder': 'Your Student ID',
         }
     )
     password = PasswordField(
@@ -40,7 +40,7 @@ class RegistrationForm(FlaskForm):
         validators=[DataRequired()],
         render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever',
+            'placeholder': 'Password',
         }
     )
     password2 = PasswordField(
@@ -48,7 +48,7 @@ class RegistrationForm(FlaskForm):
         validators=[DataRequired(), EqualTo('password')],
         render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever',
+            'placeholder': 'Password Again',
         }
     )
     email = StringField(
@@ -56,7 +56,7 @@ class RegistrationForm(FlaskForm):
         validators=[DataRequired(), Email()],
         render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever',
+            'placeholder': 'Your Email Address',
         }
     )
     student_name = StringField(
@@ -64,15 +64,15 @@ class RegistrationForm(FlaskForm):
         validators=[DataRequired()],
         render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever',
+            'placeholder': 'Your Name',
         }
     )
     repo_url = StringField(
         'Repo',
         validators=[DataRequired()],
-        render_kw = {
+        render_kw={
             'class': 'form-control monospace',
-            'placeholder': 'Whatever',
+            'placeholder': 'Your Repository URL',
         }
     )
     submit = SubmitField(
