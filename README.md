@@ -2,9 +2,9 @@
 
 补充1: 支持的语言列表请到Issue #24查看。
 
-补充2: 测试点信息：Semantic Check：183    Code generation：78   Optimization Test：0
+补充2: 测试点信息：Semantic Check：190(+7)    Code generation：78   Optimization Test：0
 
-信息：最新测试集合GitHash `24990723d4bb754b23eeb5980a18862fa4b050de` 最后更新：2020年2月18日
+信息：最新测试集合GitHash `7fee603e2fd129b39b4fe1a458675058d56fa863` 最后更新：2020年2月26日
 
 ## 特大利好: Semantic阶段本地Judge已经搭建完成，欢迎测试！
 
