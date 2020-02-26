@@ -109,6 +109,7 @@ type JudgePoolElement struct {
 	repo     string
 	githash  string
 	recordID string
+	build 	 bool
 	success  []string
 	fail     []string
 	pending  []string
