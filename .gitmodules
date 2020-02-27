@@ -4,3 +4,6 @@
 [submodule "local-judge"]
 	path = local-judge
 	url = https://github.com/peterzheng98/Compiler-2020-local-judge.git
+[submodule "ravel"]
+	path = ravel
+	url = https://github.com/Engineev/ravel.git
