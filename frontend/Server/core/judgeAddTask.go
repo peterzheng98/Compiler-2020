@@ -10,6 +10,7 @@ func addOptimize(uuid string, repo string) {
 		fail:    make([]string, 0),
 		pending: make([]string, 0),
 		running: make([]string, 0),
+		runningSet:make(map[string]bool),
 		total:   0,
 	}
 	result, err := executionQuery("SELECT optim_uid FROM dataset_optimize")
@@ -38,6 +39,7 @@ func addCodegen(uuid string, repo string) {
 		fail:    make([]string, 0),
 		pending: make([]string, 0),
 		running: make([]string, 0),
+		runningSet:make(map[string]bool),
 		total:   0,
 	}
 	result, err := executionQuery("SELECT cg_uid FROM dataset_codegen")

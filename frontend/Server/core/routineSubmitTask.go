@@ -14,79 +14,57 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 	var array []submitTaskElement
 	err := json.NewDecoder(r.Body).Decode(&array)
 	if err != nil {
-		fmt.Printf("runtime Error: %s", err.Error())
-		// send empty message
-		_, _ = fmt.Fprint(w, "{\"code\": 400, \"message\": \"Unable to decode data\"}")
+		logger(fmt.Sprintf("Runtime error: %s", err.Error()), 1)
+		_ = json.NewEncoder(w).Encode(simpleSendFormat{
+			Code:    400,
+			Message: fmt.Sprint(err.Error()),
+		})
 		return
 	}
 	// match the list
 	for _, v := range array {
 		if v.Judgetype == 1 {
 			// search in semantic
-			var flag bool = false
 			for idx, semanticV := range semanticPool {
 				if semanticV.uuid == v.Uuid {
 					semanticPool[idx].githash = v.GitHash
-					if v.JudgeResult[0] == "1" {
+					if v.JudgeResult[0] == "0" {
+						delete(semanticPool[idx].runningSet, v.TestCase)
 						semanticPool[idx].success = append(semanticPool[idx].success, v.SubworkId)
-					} else {
+						semanticPool[idx].build = true
+					} else if v.JudgeResult[0] == "2"{
+						semanticPool[idx].build = false
+					} else{
 						semanticPool[idx].fail = append(semanticPool[idx].fail, v.SubworkId)
-					}
-					for idx2, entry := range semanticV.running {
-						if entry == v.TestCase {
-							semanticPool[idx].running = append(semanticPool[idx].running[0:idx2], semanticPool[idx].running[idx2+1:]...)
-							flag = true
-							break
-						}
-					}
-					if flag {
-						break
+						semanticPool[idx].build = true
+						delete(semanticPool[idx].runningSet, v.TestCase)
 					}
 				}
 			}
 		} else if v.Judgetype == 2 {
 			// search in codegen
-			var flag bool = false
 			for idx, semanticV := range codegenPool {
 				if semanticV.uuid == v.Uuid {
 					codegenPool[idx].githash = v.GitHash
-					if v.JudgeResult[0] == "1" {
+					if v.JudgeResult[0] == "0" {
 						codegenPool[idx].success = append(codegenPool[idx].success, v.SubworkId)
+						delete(codegenPool[idx].runningSet, v.TestCase)
 					} else {
 						codegenPool[idx].fail = append(codegenPool[idx].fail, v.SubworkId)
-					}
-					for idx2, entry := range semanticV.running {
-						if entry == v.TestCase {
-							codegenPool[idx].running = append(codegenPool[idx].running[0:idx2], codegenPool[idx].running[idx2+1:]...)
-							flag = true
-							break
-						}
-					}
-					if flag {
-						break
+						delete(codegenPool[idx].runningSet, v.TestCase)
 					}
 				}
 			}
 		} else {
 			// search in optimize
-			var flag bool = false
 			for idx, semanticV := range optimizePool {
 				if semanticV.uuid == v.Uuid {
 					optimizePool[idx].githash = v.GitHash
 					if v.JudgeResult[0] == "1" {
 						optimizePool[idx].success = append(optimizePool[idx].success, v.SubworkId)
+						delete(optimizePool[idx].runningSet, v.TestCase)
 					} else {
 						optimizePool[idx].fail = append(optimizePool[idx].fail, v.SubworkId)
-					}
-					for idx2, entry := range semanticV.running {
-						if entry == v.TestCase {
-							optimizePool[idx].running = append(optimizePool[idx].running[0:idx2], optimizePool[idx].running[idx2+1:]...)
-							flag = true
-							break
-						}
-					}
-					if flag {
-						break
 					}
 				}
 			}

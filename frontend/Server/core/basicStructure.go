@@ -114,6 +114,7 @@ type JudgePoolElement struct {
 	fail     []string
 	pending  []string
 	running  []string
+	runningSet map[string]bool
 	total    int
 }
 

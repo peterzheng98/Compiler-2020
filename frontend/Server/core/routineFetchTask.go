@@ -23,23 +23,31 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 		}
 		if remainPend != 0 {
 			if remainPend < 5 {
-				semanticPool[idx].running = make([]string, remainPend)
 				runningList = make([]string, remainPend)
-				_ = copy(semanticPool[idx].running, semanticPool[idx].pending)
+				_ = copy(runningList, semanticPool[idx].pending)
 				semanticPool[idx].pending = append(semanticPool[idx].pending[remainPend:])
+				for _, data := range semanticPool[idx].pending {
+					semanticPool[idx].runningSet[data] = true
+				}
 			} else {
-				semanticPool[idx].running = make([]string, 5)
 				runningList = make([]string, 5)
-				_ = copy(semanticPool[idx].running, semanticPool[idx].pending[0:5])
+				_ = copy(runningList, semanticPool[idx].pending[0:5])
 				semanticPool[idx].pending = append(semanticPool[idx].pending[5:])
+				for idx2, data := range semanticPool[idx].pending {
+					semanticPool[idx].runningSet[data] = true
+					if idx2 == 4 {
+						break
+					}
+				}
 			}
-			_ = copy(runningList, semanticPool[idx].running)
-			cmd := "SELECT sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE " +
-				"sema_uid='" + strings.Join(runningList, "' OR sema_uid='") + "'"
-			fmt.Printf("Execution Sentence:%s\n", cmd)
-			result, err := executionQuery(cmd)
+			sqlCmd := fmt.Sprintf("SELECT sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE %s", "sema_uid='"+strings.Join(runningList, "' OR sema_uid='")+"'")
+			result, err := executionQuery(sqlCmd)
 			if err != nil {
-				fmt.Printf("Error %s\n", err.Error())
+				logger(fmt.Sprintf("Runtime error: %s", err.Error()), 1)
+				_ = json.NewEncoder(w).Encode(simpleSendFormat{
+					Code:    400,
+					Message: fmt.Sprint(err.Error()),
+				})
 				return
 			}
 			var sentReq requestSemanticTaskFormat
@@ -53,7 +61,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				var memoryLimit int
 				err = result.Scan(&id, &sourceCode, &assert, &timeLimit, &memoryLimit)
 				if err != nil {
-					fmt.Printf("runtime warning:%s when scanning the semantic database\n", err.Error())
+					logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 1)
 				}
 				sentReq.Target = append(sentReq.Target, subtaskSemanticFormat{
 					Uuid:            poolElement.uuid,
@@ -71,7 +79,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 
 			err = json.NewEncoder(w).Encode(sentReq)
 			if err != nil {
-				fmt.Printf("runtime error: %s\n", err.Error())
+				logger(fmt.Sprintf("Runtime error: %s", err.Error()), 1)
 			}
 			return
 		}
@@ -229,4 +237,3 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 	}
 	return
 }
-
