@@ -24,6 +24,10 @@ def genLog(s: str):
         f.write('[%s] %s\n' % (timeStr, s))
 
 
+def build_compiler(config_dict: dict):
+    return None, None, None, None
+
+
 def updateUserList(userlist_Dict: dict):
     olduserList_Dict = {}
     updateList = []
@@ -131,6 +135,23 @@ if __name__ == '__main__':
     while True:
         r = None
         try:
+            r = requests.get(Config_Dict['serverFetchCompileTask'], timeout=2)
+            r.raise_for_status()
+            build_task_Dict = r.json()
+            if build_task_Dict['code'] == 200:
+                genLog('Build Task received: {}'.format(build_task_Dict['message']))
+                build_task = build_task_Dict['message']
+                verdict, GitHash, GitCommit, BuildMessage = build_compiler(build_task)
+                build_task['verdict'] = verdict
+                build_task['gitHash'] = GitHash
+                build_task['gitCommit'] = GitCommit
+                build_task['message'] = BuildMessage
+                r = requests.post(Config_Dict['serverSubmitCompileTask'], timeout=2, data=json.dumps(build_task))
+                while r.json()['code'] != 200:
+                    time.sleep(1)
+                    r = requests.post(Config_Dict['serverSubmitCompileTask'], timeout=2, data=json.dumps(build_task))
+                continue
+
             time.sleep(1)
             r = requests.get(Config_Dict['serverFetchTask'], timeout=10)
             r.raise_for_status()

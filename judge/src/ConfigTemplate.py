@@ -4,6 +4,8 @@ Config_Dict = {
     "serverFetchUser": "http://127.0.0.1:10430/fetchRepo",
     "serverFetchTask": "http://127.0.0.1:10430/fetchTask",
     "serverSubmitTask": "http://127.0.0.1:10430/submitTask",
+    "serverFetchCompileTask": "http://127.0.0.1:10430/fetchBuild",
+    "serverSubmitCompileTask": "http://127.0.0.1:10430/submitBuild",
     "dockerbase": "compilerBase",
     "dockerprefix": "cdocker_",
     "dockerfilepath": "../dockerfile/",

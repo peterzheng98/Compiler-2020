@@ -35,7 +35,7 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if dispatchedResult.Verdict == "Success" {
-		delete(compilePool, dispatchedResult.Ident)
+		
 		var poolElement JudgePoolElement
 		poolElement.repo = dispatchedResult.Repo
 		poolElement.uuid = dispatchedResult.UUID
@@ -82,19 +82,20 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+		
+		_ = json.NewEncoder(w).Encode(simpleSendFormat{
+			Code:    200,
+			Message: fmt.Sprint("Accept the result"),
+		})
+		delete(compilePool, dispatchedResult.Ident)
 		logger(fmt.Sprintf("=========================================="), 1)
 		logger(fmt.Sprintf("[*] Request Added, current semantic pool: length=%d", len(semanticPool)), 1)
 		for idx, d := range semanticPool {
 			logger(fmt.Sprintf("Record[%d]: %s", idx, d), 0)
 		}
 		logger(fmt.Sprintf("=========================================="), 1)
-		_ = json.NewEncoder(w).Encode(simpleSendFormat{
-			Code:    200,
-			Message: fmt.Sprint("Accept the result"),
-		})
 	} else {
 		// Build failed
-		delete(compilePool, dispatchedResult.Ident)
 		commandStr := fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=3 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", dispatchedResult.UUID, dispatchedResult.Repo)
 		_, err = executionExec(commandStr)
 		if err != nil {
@@ -104,6 +105,7 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 			Code:    200,
 			Message: fmt.Sprint("Accept the result"),
 		})
+		delete(compilePool, dispatchedResult.Ident)
 
 	}
 }
