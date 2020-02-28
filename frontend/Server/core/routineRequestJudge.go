@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 func reqJudge(w http.ResponseWriter, r *http.Request) {
@@ -19,10 +20,19 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	var poolElement JudgePoolElement
+	poolElement.repo = record.Repo
+	poolElement.uuid = record.Uuid
+	poolElement.recordID = n.Next()
+	poolElement.build = false
+	var timeUnix = time.Now().Unix()
+	compilePool[fmt.Sprint(timeUnix)] = poolElement
+
 	// request for all the record in database
 	result, err := executionQuery("SELECT sema_uid FROM dataset_semantic")
 	if err != nil {
-		logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()),1 )
+		logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 1)
 		_ = json.NewEncoder(w).Encode(simpleSendFormat{
 			Code:    400,
 			Message: fmt.Sprint(err.Error()),
@@ -38,11 +48,7 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer result.Close()
-	var poolElement JudgePoolElement
-	poolElement.repo = record.Repo
-	poolElement.uuid = record.Uuid
-	poolElement.recordID = n.Next()
-	poolElement.build = false
+
 	for result.Next() {
 		var id string
 		err = result.Scan(&id)
@@ -52,9 +58,9 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 		poolElement.pending = append(poolElement.pending, id)
 	}
 	semanticPool = append(semanticPool, poolElement)
-	sqlCmd := fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=0 WHERE stu_uuid='%s' AND stu_repo='%s'", record.Uuid, record.Repo)
+	sqlCmd := fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=1 WHERE stu_uuid='%s' AND stu_repo='%s'", record.Uuid, record.Repo)
 	_, err = executionExec(sqlCmd)
-	if err != nil{
+	if err != nil {
 		logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 1)
 		_ = json.NewEncoder(w).Encode(simpleSendFormat{
 			Code:    401,
@@ -63,8 +69,8 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger(fmt.Sprintf("=========================================="), 1)
-	logger(fmt.Sprintf("[*] Request Added, current semantic pool: length=%d", len(semanticPool)),1 )
-	for idx, d := range semanticPool{
+	logger(fmt.Sprintf("[*] Request Added, current semantic pool: length=%d", len(semanticPool)), 1)
+	for idx, d := range semanticPool {
 		logger(fmt.Sprintf("Record[%d]: %s", idx, d), 0)
 	}
 	logger(fmt.Sprintf("=========================================="), 1)
@@ -73,5 +79,3 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 		Message: fmt.Sprint("Judge in queue."),
 	})
 }
-
-
