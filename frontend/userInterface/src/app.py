@@ -58,9 +58,9 @@ def login_app():
         return redirect('/')
 
 
-@app.route('/judge/detail/<string:judgeid>')
+@app.route('/judge/detail/<string:judgeid>/<string:judgepid>')
 @login_required
-def judge_detail(judgeid: str):
+def judge_detail(judgeid: str, judgepid: str):
     if not validator.isAllDigits(judgeid):
         flash('Invalid operation: {} is an invalid code.'.format(judgeid))
         return redirect('/judge/list/0')

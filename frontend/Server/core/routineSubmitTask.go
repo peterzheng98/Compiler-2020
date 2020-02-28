@@ -101,6 +101,12 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				_, err = executionExec(commandStr)
+				if err != nil {
+					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
+					continue
+				}
 				addCodegen(sliceElement.uuid, sliceElement.repo)
 				semanticPool = append(semanticPool[0:v2], semanticPool[v2+1:]...)
 			}
@@ -113,6 +119,12 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Codegen]: %s", err.Error()), 1)
 					continue
 				}
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				_, err = executionExec(commandStr)
+				if err != nil {
+					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
+					continue
+				}
 				addOptimize(sliceElement.uuid, sliceElement.repo)
 				codegenPool = append(codegenPool[0:v2], codegenPool[v2+1:]...)
 			}
@@ -123,6 +135,12 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Optimize]: %s", err.Error()), 1)
+					continue
+				}
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=7 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				_, err = executionExec(commandStr)
+				if err != nil {
+					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
 				optimizePool = append(optimizePool[0:v2], optimizePool[v2+1:]...)
@@ -139,6 +157,13 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic-2]: %s", err.Error()), 1)
+					continue
+				}
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=4 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				_, err = executionExec(commandStr)
+				if err != nil {
+					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
+					continue
 				}
 				semanticPool = append(semanticPool[0:v2], semanticPool[v2+1:]...)
 			}
@@ -149,6 +174,13 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Codegen-2]: %s", err.Error()), 1)
+					continue
+				}
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				_, err = executionExec(commandStr)
+				if err != nil {
+					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
+					continue
 				}
 				codegenPool = append(codegenPool[0:v2], codegenPool[v2+1:]...)
 			}
@@ -159,6 +191,13 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Optimize-2]: %s", err.Error()), 1)
+					continue
+				}
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				_, err = executionExec(commandStr)
+				if err != nil {
+					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
+					continue
 				}
 				optimizePool = append(optimizePool[0:v2], optimizePool[v2+1:]...)
 			}
@@ -167,8 +206,8 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 	// add the judge result into database
 	var commandStr string
 	for _, v := range array {
-		commandStr = fmt.Sprintf("INSERT INTO JudgeDetail(judge_d_useruuid, judge_d_githash, judge_d_judger, judge_d_judgeTime, judge_d_subworkId, judge_d_testcase, judge_d_result, judge_d_type) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-			v.Uuid, v.GitHash, v.Judger, v.JudgeTime, v.SubworkId, v.TestCase, strings.Join(v.JudgeResult, "/"), fmt.Sprintf("%d", v.Judgetype))
+		commandStr = fmt.Sprintf("INSERT INTO JudgeDetail(judge_d_useruuid, judge_d_githash, judge_d_judger, judge_d_judgeTime, judge_d_subworkId, judge_d_testcase, judge_d_result, judge_d_type, judge_p_judgeid) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
+			v.Uuid, v.GitHash, v.Judger, v.JudgeTime, v.SubworkId, v.TestCase, strings.Join(v.JudgeResult, "/"), fmt.Sprintf("%d", v.Judgetype), v.TaskID)
 		_, err := executionExec(commandStr)
 		if err != nil {
 			logger(fmt.Sprintf("Runtime error: %s", err.Error()), 1)

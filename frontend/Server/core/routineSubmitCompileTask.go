@@ -72,7 +72,7 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 		}
 		semanticPool = append(semanticPool, poolElement)
 		// update user status
-		updateCmd := fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=2 WHERE stu_uuid='%s' AND stu_repo='%s'", dispatchedResult.UUID, dispatchedResult.Repo)
+		updateCmd := fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=4 WHERE stu_uuid='%s' AND stu_repo='%s'", dispatchedResult.UUID, dispatchedResult.Repo)
 		_, sqlErr := executionExec(updateCmd)
 		if sqlErr != nil {
 			logger(fmt.Sprintf("SQL Runtime error: %s", sqlErr.Error()), 1)
@@ -95,9 +95,15 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// Build failed
 		delete(compilePool, dispatchedResult.Ident)
+		commandStr := fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=3 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+		_, err = executionExec(commandStr)
+		if err != nil {
+			logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
+		}
 		_ = json.NewEncoder(w).Encode(simpleSendFormat{
 			Code:    200,
 			Message: fmt.Sprint("Accept the result"),
 		})
+
 	}
 }

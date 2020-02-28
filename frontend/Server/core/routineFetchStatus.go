@@ -19,7 +19,7 @@ func getJudgeStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	var start = array[0]
 	var length = array[1]
-	sqlCmd := fmt.Sprintf("SELECT id, judge_p_useruuid, judge_p_githash, judge_p_verdict, judge_p_judgetime from judgeResult order by id desc limit %d,%d;", start, length)
+	sqlCmd := fmt.Sprintf("SELECT id, judge_p_useruuid, judge_p_githash, judge_p_verdict, judge_p_judgetime, judge_p_judgeid from judgeResult order by id desc limit %d,%d;", start, length)
 	result, err := executionQuery(sqlCmd)
 	if err != nil {
 		fmt.Printf("runtime Error: %s", err.Error())
@@ -35,9 +35,10 @@ func getJudgeStatus(w http.ResponseWriter, r *http.Request) {
 		var userGithash string
 		var userVerdict string
 		var userJudgetime string
+		var userJudgeID string
 		var id string
-		err = result.Scan(&id, &userUuid, &userGithash, &userVerdict, &userJudgetime)
-		dataSent := [] string{userUuid, userGithash, userVerdict, userJudgetime, id}
+		err = result.Scan(&id, &userUuid, &userGithash, &userVerdict, &userJudgetime, &userJudgeID)
+		dataSent := [] string{userUuid, userGithash, userVerdict, userJudgetime, id, userJudgeID}
 		if err != nil{
 			fmt.Printf("[*]Internal Error, %s", err.Error())
 			continue
