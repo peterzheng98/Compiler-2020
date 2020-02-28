@@ -64,15 +64,83 @@ def judge_detail(judgeid: str, judgepid: str):
     if not validator.isAllDigits(judgeid):
         flash('Invalid operation: {} is an invalid code.'.format(judgeid))
         return redirect('/judge/list/0')
-    passed_attr = 'btn-sm btn-success custom-xsmall-font custom-bold-font'
-    failed_attr = 'btn-sm btn-warning custom-bold-font custom-xsmall-font'
-    return render_template('judge_detail.html', webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
-                           content_title='Details for Record #{}'.format(judgeid),
-                           commit_message='12345\n\n123\n\n123->',
-                           header_list=['#', 'Phase', 'Test case', 'Verdict', 'Compiling Time', 'Execution Cycles'],
-                           record_list=[],
-                           judge_list=[],
-                           prev_page=0)
+    # fetch the general result
+    try:
+        dat = {
+            'uuid': judgeid,
+            'repo': judgepid
+        }
+        r = HTTPReq.post(path.fetchStatusBrief, timeout=2, data=json.dumps(dat))
+        if r.json()['code'] != 200:
+            return render_template('judge_detail.html',
+                                   webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
+                                   content_title='Details for Record #{}'.format(judgeid),
+                                   commit_message='Error occurred in fetching the message.\nTechnical Information:\n{}'.format(
+                                       r.json()['message']),
+                                   header_list=['#', 'Phase', 'Test case', 'Verdict', 'Compiling Time',
+                                                'Execution Cycles'],
+                                   record_list=[],
+                                   judge_list=[],
+                                   prev_page=0)
+        judge_list = [None]
+        judge_list[0] = ('0-Build', '1', 100.0) if 'Success' in r.json()['message']['buildResult'] else ('0-Build', '0', 100.0)
+        passed_attr = 'btn btn-sm btn-success custom-xsmall-font custom-bold-font'
+        failed_attr = 'btn btn-sm btn-danger custom-bold-font custom-xsmall-font'
+        std_font_attr = 'custom-small-font'
+        dat2 = {
+            'uuid': judgepid,
+            'repo': '123'
+        }
+        r2 = HTTPReq.post(path.fetchJudgeResultDetail, timeout=5, data=json.dumps(dat2))
+        print('==>{}'.format(r2.json()))
+        record_list = []
+        if r2.json()['code'] != 200:
+            record_list = []
+        else:
+            for Idx, D in enumerate(r2.json()['message']):
+                sub_list = [(std_font_attr, '', Idx), (std_font_attr, '',
+                                             '1-Semantic' if D[0] == '1' else '2-Codegen' if D[0] == '2' else '3-Optimize' if
+                                             D[0] == '3' else 'Unknown'), (std_font_attr, '', D[1])]
+                if D[2][0] == '1':
+                    sub_list.append((passed_attr, '', 'passed'))
+                else:
+                    sub_list.append((failed_attr, '', 'failed'))
+                compileTime, executionCycle, JudgeTime = D[3].split('/')
+                sub_list.append((std_font_attr, '', '{:.2f}s'.format(float(compileTime))))
+                sub_list.append((std_font_attr, '', executionCycle))
+                sub_list.append((std_font_attr, '', JudgeTime))
+                record_list.append(sub_list)
+
+            positive = {}
+            negative = {}
+            for elem in record_list:
+                if elem[1][2] not in positive.keys():
+                    positive[elem[1][2]] = 0
+                    negative[elem[1][2]] = 0
+                if elem[3][2] == 'passed':
+                    positive[elem[1][2]] = positive[elem[1][2]] + 1
+                else:
+                    negative[elem[1][2]] = negative[elem[1][2]] + 1
+            for k, v in positive.items():
+                judge_list.append((k, '{}'.format(v), 100.0 * v / (v + negative[k]), '{}'.format(negative[k]), 100.0 - 100.0 * v / (v + negative[k])))
+        return render_template('judge_detail.html',
+                               webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
+                               content_title='Details for Record #{}'.format(judgeid),
+                               commit_message=r.json()['message']['gitMessage'],
+                               header_list=['#', 'Phase', 'Test case', 'Verdict', 'Compiling', 'Execution Cycles',
+                                            'Judge Time'],
+                               record_list=record_list,
+                               judge_list=judge_list,
+                               prev_page=0, builtMessage=r.json()['message']['buildMessage'].replace('\\n', '\n'))
+    except Exception as identifier:
+        return render_template('judge_detail.html',
+                               webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
+                               content_title='Details for Record #{}'.format(judgeid),
+                               commit_message='Error occurred in fetching the message.',
+                               header_list=['#', 'Phase', 'Test case', 'Verdict', 'Compiling Time', 'Execution Cycles'],
+                               record_list=[],
+                               judge_list=[],
+                               prev_page=0)
 
 
 @app.route('/judge/list/<string:page>')
@@ -172,7 +240,8 @@ def register():
         return redirect('/')
     registerForm = RegistrationForm()
     if request.method == 'GET':
-        return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+        return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'},
+                               registerForm=registerForm)
     else:
         userid = request.form.get('userid')
         password = request.form.get('password')
@@ -182,10 +251,12 @@ def register():
         repo_url = request.form.get('repo_url')
         if '@' not in email:
             flash('Your email is invalid.')
-            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'},
+                                   registerForm=registerForm)
         if password != password2:
             flash('Password doesn\'t match')
-            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'},
+                                   registerForm=registerForm)
         reg_data = {
             'stu_id': userid,
             'stu_password': password,
@@ -197,14 +268,14 @@ def register():
             r = HTTPReq.post(path.registerPath, data=json.dumps(reg_data), timeout=5)
             if r.json()['code'] != 200:
                 flash('Error occurred! {}'.format(r.json()['message']))
-                return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
+                return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'},
+                                       registerForm=registerForm)
             flash('Register Successfully!')
             return redirect('/login')
         except Exception as identifier:
             flash('Error occurred! {}'.format(identifier))
-            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'}, registerForm=registerForm)
-
-
+            return render_template('register.html', webconfig={'title': 'Register - Compiler 2020'},
+                                   registerForm=registerForm)
 
 
 @app.route('/logout')

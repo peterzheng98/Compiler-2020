@@ -53,6 +53,8 @@ func main() {
 	http.HandleFunc("/fetchRepoWeb", getUserListWeb)
 	http.HandleFunc("/fetchBuild", fetchCompileTask)
 	http.HandleFunc("/submitBuild", submitBuildTask)
+	http.HandleFunc("/getStatusBrief", getJudgeResult)
+	http.HandleFunc("/getStatusDetail", getJudgeResultDetail)
 	fmt.Print("Start to serve\n")
 	http.ListenAndServe(":10430", nil)
 }

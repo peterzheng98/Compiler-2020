@@ -10,6 +10,11 @@ type sendFormatWeb struct {
 	Message map[string][]string `json:"message"`
 }
 
+type sendFormatList struct {
+	Code    int        `json:"code"`
+	Message [][]string `json:"message"`
+}
+
 type simpleSendFormat struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`

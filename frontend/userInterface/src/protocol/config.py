@@ -7,3 +7,5 @@ class PathConfig:
     submitTaskPath = basePath + 'submitTask'
     fetchUuidPath = basePath + 'queryID'
     fetchStatusPath = basePath + 'fetchStatus'
+    fetchStatusBrief = basePath + 'getStatusBrief'
+    fetchJudgeResultDetail = basePath + 'getStatusDetail'

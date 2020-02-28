@@ -11,14 +11,15 @@
                     <h4>Commit Information</h4>
                     <div class="card-text code-font form-group">
                         <label>
-                            <textarea class="form-control custom-small-font" style="overflow:hidden; resize:none; " type="text"
+                            <textarea class="form-control custom-small-font" style="overflow:hidden; resize:none; "
+                                      type="text"
                                       name="commit-message" readonly="readonly" rows="7"
                                       cols="100%">{{ commit_message }}</textarea>
                         </label>
                     </div>
                 </div>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <div class="card-text custom-small-font">
+                    <div class="custom-small-font">
                         <h4>&nbsp;</h4>
                         <table class="table">
                             <thead>
@@ -29,11 +30,28 @@
                             <tbody>
                             {% for phase in judge_list %}
                                 <tr>
-                                    <td>{{ phase[0] }}</td>
-                                    <td>{{ phase[1] }}</td>
-                                    <td>{{ phase[2] }}</td>
+                                <td>{{ phase[0] }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" role="progressbar"
+                                             aria-valuenow="{{ phase[2] }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100"
+                                             style="width: {{ phase[2] }}%;">
+                                            {{ phase[1] }}
+                                        </div>
+                                        <div class="progress-bar bg-danger" role="progressbar"
+                                             aria-valuenow="{{ phase[4] }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100"
+                                             style="width: {{ phase[4] }}%;">
+                                            {{ phase[3] }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ phase[2] }}</td>
                             {% endfor %}
-                                </tr>
+                            </tr>
                             </tbody>
                         </table>
                         <div align="right">
@@ -43,6 +61,19 @@
                         </div>
                     </div>
                 </div>
+
+                <hr class="my-3">
+                <div class="col-md-12 col-xs-12 col-sm-12">
+                    <h4>Build Message</h4>
+                    <div class="card-text code-font form-group">
+                        <label>
+                            <textarea class="form-control custom-xsmall-font" style="resize:none; " type="text"
+                                      name="commit-message" readonly="readonly" rows="5"
+                                      cols="200%">{{ builtMessage }}</textarea>
+                        </label>
+                    </div>
+                </div>
+
                 <hr class="my-3">
                 <div class="col-md-12 col-xs-12 col-sm-12">
                     <h4>Judgement Protocol</h4>
@@ -54,19 +85,23 @@
                             {% endfor %}
                             </thead>
                             <tbody>
-                            {% for record in record_list %}
-                                <tr>
-                                    {% for data in record %}
-                                        <td>
-                                            <div class="{{ data[0] }}">
-                                                <a href="{{ data[1] }}">
+                            <div class="custom-medium-font">
+                                {% for record in record_list %}
+                                    <tr>
+                                        {% for data in record %}
+                                            <td>
+                                                <div class="{{ data[0] }}">
+                                                    {% if data[1] != '' %}
+                                                        <a href="{{ data[1] }}">
+                                                    {% endif %}
                                                     {{ data[2] }}
-                                                </a>
-                                            </div>
-                                        </td>
-                                    {% endfor %}
-                                </tr>
-                            {% endfor %}
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </div>
                             </tbody>
                         </table>
                     </div>
