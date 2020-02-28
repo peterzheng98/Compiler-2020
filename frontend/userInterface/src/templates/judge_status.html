@@ -19,22 +19,22 @@
                     <tr>
                         <td valign="middle" align="left">
                             <a href="/judge/detail/{{ rows[4] }}/{{ rows[5] }}">
-                                <div class="custom-small-font"> {{ rows[4] }}</div>
+                                <div class="custom-medium-font"> {{ rows[4] }}</div>
                             </a>
                         </td>
                         <td valign="middle" align="left">
-                            <div class="custom-small-font">
+                            <div class="custom-medium-font">
                                 {{ rows[0] }}
                             </div>
                         </td>
                         <td valign="middle" align="left">
-                            <div class="code-font">
+                            <div class="code-font custom-medium-font">
                                 {{ rows[1] }}</div>
                         </td>
 
                         {% if rows[2] == '0' %}
-                            <td valign="middle" align="left" class="table-warning">
-                                <div class="custom-small-font">
+                            <td valign="middle" align="left" class="table-danger">
+                                <div class="custom-medium-font">
                                     Fail
                                 </div>
 
@@ -42,34 +42,34 @@
                         {% endif %}
                         {% if rows[2] == '1' %}
                             <td valign="middle" align="left" class="table-success">
-                                <div class="custom-small-font">
+                                <div class="custom-medium-font">
                                     Pass
                                 </div>
                             </td>
                         {% endif %}
                         {% if rows[2] == '2' %}
                             <td valign="middle" align="left" class="table-primary">
-                                <div class="custom-small-font">
+                                <div class="custom-medium-font">
                                     Running
                                 </div>
                             </td>
                         {% endif %}
                         {% if rows[2] == "-1" %}
                             <td valign="middle" align="left" class="table-info">
-                                <div class="custom-small-font">
+                                <div class="custom-medium-font">
                                     Pending
                                 </div>
                             </td>
                         {% endif %}
 
                         <td valign="middle" align="left">
-                            <div class="custom-small-font"> {{ rows[3] }}</div>
+                            <div class="custom-medium-font"> {{ rows[3] }}</div>
                         </td>
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
-            <div class="btn-group" role="group" aria-label="Page Control">
+            <div class="btn btn-group" role="group" aria-label="Page Control">
                 <button type="button" class="btn btn-primary" onclick="location.href='/judge/list/{{ prev_page }}'">
                     Previous Page
                 </button>
