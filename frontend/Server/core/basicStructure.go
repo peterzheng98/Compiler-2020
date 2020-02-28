@@ -1,6 +1,5 @@
 package main
 
-
 type sendFormat struct {
 	Code    int               `json:"code"`
 	Message map[string]string `json:"message"`
@@ -105,16 +104,26 @@ type submitTaskElement struct {
 }
 
 type JudgePoolElement struct {
-	uuid     string
-	repo     string
-	githash  string
-	recordID string
-	build 	 bool
-	success  []string
-	fail     []string
-	pending  []string
-	running  []string
+	uuid       string
+	repo       string
+	githash    string
+	recordID   string
+	build      bool
+	success    []string
+	fail       []string
+	pending    []string
+	running    []string
 	runningSet map[string]bool
-	total    int
+	total      int
 }
 
+type submitBuiltTaskElement struct {
+	Ident        string `json:"ident"`
+	Repo         string `json:"repo"`
+	RecordID     string `json:"recordID"`
+	UUID         string `json:"uuid"`
+	Verdict      string `json:"verdict"`
+	GitHash      string `json:"gitHash"`
+	GitCommit    string `json:"gitCommit"`
+	BuildMessage string `json:"message"`
+}

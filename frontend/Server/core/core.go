@@ -16,7 +16,6 @@ var semanticPool []JudgePoolElement
 var codegenPool []JudgePoolElement
 var optimizePool []JudgePoolElement
 var compilePool = make(map[string]JudgePoolElement)
-var compilePoolCounter = 0
 var db, _ = sql.Open("mysql", "client:password1A@tcp(127.0.0.1:3306)/compiler")
 var db2, _ = sql.Open("mysql", "client:password1A@tcp(127.0.0.1:3306)/compiler")
 
