@@ -111,9 +111,7 @@ test case is not too bad.
 
 注：本文参照ISO/IEC 14882:2017 Programming Language C++以及往年的Manual做出修改。如果对数据或文档有疑问或者认为数据或文档存在错误的，请发起Issue。如果发现有可修复的错误可以直接发起Pull Requests，十分感谢！
 
-预期的评分：90% 客观排位、Bonus、数据贡献分，10% 主观演讲分等。
-
-评测的3个阶段：语义检查（Semantic Check），代码生成（Codegen），代码优化（Optimize）。
+评测的3个阶段：语义检查（Semantic Check，DDL 2020/04/03 22:00），代码生成（Codegen），代码优化（Optimize）。
 
 **禁止行为（将会直接0分）：**
 
