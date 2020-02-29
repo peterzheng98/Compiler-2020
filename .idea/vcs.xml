@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/local-judge" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/ravel" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/testcase" vcs="Git" />
   </component>
 </project>

@@ -3,7 +3,7 @@ from initalSet import initDatabase
 from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
 from dockerTools import existImage, cleanDocker, makeContainer, C
 from judgeTools import judgeSemantic, judgeCodeGen
-from gitTools import updateRepo, getGitHash
+from .gitTools import updateRepo, getGitHash, fetchGitCommit
 import sys
 import docker
 import requests
@@ -25,7 +25,58 @@ def genLog(s: str):
 
 
 def build_compiler(config_dict: dict):
-    return None, None, None, None
+    assert 'uuid' in config_dict.keys()
+    assert 'repo' in config_dict.keys()
+    userCompilerPath = Config_Dict['compilerPath'] + '/' + config_dict['uuid']
+    # Check the hash value
+    # 1. get local hash
+    hashResultLocal = getGitHash(userCompilerPath)
+    # 2. get remote hash
+    hashResultRemote = getGitHash(config_dict['repo'])
+    hashMatched = (hashResultLocal[0] == 1 and hashResultRemote[0] == 1 and hashResultLocal[1] ==
+                   hashResultRemote[1])
+    genLog('(build_compiler)Judging:local:%s, remote:%s, matched:%s' % (hashResultLocal, hashResultRemote, hashMatched))
+    # if not matched -> save a duplicated copy of the last version
+    # not matched: update the repo
+    if not hashMatched:
+        updateRepo(userCompilerPath, hashResultLocal, config_dict['repo'], config_dict['uuid'])
+    # Matched -> check whether the image exists
+    # Not matched -> build images
+    # dockerimage:uuid + hash[0:8]
+    imageName = Config_Dict['dockerprefix'] + config_dict['uuid'] + '_' + hashResultRemote[1][0:8]
+    task_Dict['imagename'] = imageName
+    if (not hashMatched) or (not existImage(imageName)):
+        build_result = 'Not Available'
+        # copy files to temporary
+        _ = subprocess.Popen('mkdir temp && cp {}/* temp/'.format(userCompilerPath), cwd=)
+        try:
+            with open('temp/Dockerfile', 'w') as f:
+                f.write(
+                    'FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
+                        Config_Dict['dockerprefix'] + 'base',
+                        Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']))
+            image_built = C.images.build(path='./temp/', rm=True, tag=imageName)
+        except docker.errors.BuildError as identifier:
+            genLog('(Judge-Build)  Built Error occurred. target:%s -> %s' % (subtask_dict, identifier))
+        except Exception as identifier:
+            genLog(
+                '(Judge-Build)  Unknown Error occurred. target:%s -> %s' % (subtask_dict, identifier))
+        shutil.rmtree('./temp')
+        genLog('(Judge-Build)  built finished. target:%s' % subtask_dict)
+        # Check whether the images exists.
+        if existImage(imageName):
+            genLog('(Judge-Build)  check existed = ok, name = %s' % imageName)
+            gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
+            return 'Success', hashResultRemote[1], gitCommitLog, build_result
+        else:
+            genLog('(Judge-Build)  check existed = failed, name = %s' % imageName)
+            gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
+            return 'Fail', hashResultRemote[1], gitCommitLog, build_result
+    else:
+        # matched and exist
+        # verdict, GitHash, GitCommit, BuildMessage
+        log = fetchGitCommit(userCompilerPath, hashResultRemote[1])
+        return 'Success', hashResultRemote[1], log, 'Recently built.'
 
 
 def updateUserList(userlist_Dict: dict):
@@ -271,13 +322,14 @@ if __name__ == '__main__':
                         subtaskResult_dict['judgetype'] = subtask_dict['stage']
                         subtaskResult_dict['uuid'] = subtask_dict['uuid']
                         submitResult_list.append(subtaskResult_dict)
-                        genLog('(Judge-Codegen/Optimize)  uuid={}, subWorkId={}, judgeResult={}, Time={}, testCaseId={}'.format(
-                            subtask_dict['uuid'],
-                            subtask_dict['subWorkId'],
-                            judgeResult,
-                            subtaskResult_dict['JudgeTime'],
-                            subtaskResult_dict['testCase']
-                        ))
+                        genLog(
+                            '(Judge-Codegen/Optimize)  uuid={}, subWorkId={}, judgeResult={}, Time={}, testCaseId={}'.format(
+                                subtask_dict['uuid'],
+                                subtask_dict['subWorkId'],
+                                judgeResult,
+                                subtaskResult_dict['JudgeTime'],
+                                subtaskResult_dict['testCase']
+                            ))
                     else:
                         # TODO: error, the stage not supported.
                         genLog('(Judge-Unknown)  uuid={}, subWorkId={}, Not supported stage={}'.format(
@@ -289,12 +341,13 @@ if __name__ == '__main__':
                 # submit the result to the server and wait for next
                 while True:
                     try:
-                        r = requests.post(url=Config_Dict['serverSubmitTask'], data=json.dumps(submitResult_list, ensure_ascii=False))
+                        r = requests.post(url=Config_Dict['serverSubmitTask'],
+                                          data=json.dumps(submitResult_list, ensure_ascii=False))
                         if r.json()['result'] == 'ok':
                             genLog('(Judge-Submit)  Sent!')
                             break
                         genLog('(Judge-Submit)  Not sent! Retry after 1s.')
-                        time.sleep(1) # If not success, resend after 1s
+                        time.sleep(1)  # If not success, resend after 1s
                     except Exception as identifier:
                         genLog('(Judge-Submit)  Error occurred! Retry after 1s. {}'.format(identifier))
                         time.sleep(1)
