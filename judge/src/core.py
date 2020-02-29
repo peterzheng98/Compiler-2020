@@ -1,4 +1,4 @@
-from ConfigDeploy import Config_Dict
+from .ConfigDeploy import Config_Dict
 from initalSet import initDatabase
 from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
 from dockerTools import existImage, cleanDocker, makeContainer, C
@@ -47,31 +47,41 @@ def build_compiler(config_dict: dict):
     task_Dict['imagename'] = imageName
     if (not hashMatched) or (not existImage(imageName)):
         build_result = 'Not Available'
+        build_verdict = 'Fail'
         # copy files to temporary
-        _ = subprocess.Popen('mkdir temp && cp {}/* temp/'.format(userCompilerPath), cwd=)
         try:
+            _t = subprocess.Popen('mkdir temp && cp {}/* temp/'.format(userCompilerPath),
+                                  cwd=Config_Dict['compilerPath'])
+            _t.wait(10)
             with open('temp/Dockerfile', 'w') as f:
                 f.write(
                     'FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
                         Config_Dict['dockerprefix'] + 'base',
-                        Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']))
-            image_built = C.images.build(path='./temp/', rm=True, tag=imageName)
-        except docker.errors.BuildError as identifier:
-            genLog('(Judge-Build)  Built Error occurred. target:%s -> %s' % (subtask_dict, identifier))
+                        Config_Dict['compilerPath'] + '/' + config_dict['uuid']))
+            dockerProcess = subprocess.Popen(['docker', 'built', '-t', imageName, '.'],
+                                             cwd=os.path.join(Config_Dict['compilerPath'], 'temp'),
+                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            dockerProcess.wait(Config_Dict['GitTimeout'])
+            if dockerProcess.returncode == 0:
+                build_verdict = 'Success'
+            stdout_str = dockerProcess.stdout.readlines()
+            stdout_str = ''.join([i.decode() for i in stdout_str[:20]])
+            stderr_str = dockerProcess.stderr.readlines()
+            stderr_str = ''.join([i.decode() for i in stderr_str[:20]])
+            build_result = '==stdout==\n{}\n==stderr==\n{}'.format(stdout_str, stderr_str)
+        except subprocess.TimeoutExpired:
+            build_verdict = 'Timeout'
+            build_result = 'Build timeout'
+            genLog('(Judge-Build)  Built Timeout occurred. target:%s -> %s' % (config_dict['uuid'], config_dict['ident']))
         except Exception as identifier:
+            build_verdict = 'Runtime Error'
+            build_result = 'Build Runtime Error, {}'.format(identifier)
             genLog(
-                '(Judge-Build)  Unknown Error occurred. target:%s -> %s' % (subtask_dict, identifier))
-        shutil.rmtree('./temp')
+                '(Judge-Build)  Built Runtime Error occurred. target:%s -> %s' % (config_dict['uuid'], config_dict['ident']))
+        _t = subprocess.Popen('rm -rf temp', cwd=Config_Dict['compilerPath'])
         genLog('(Judge-Build)  built finished. target:%s' % subtask_dict)
-        # Check whether the images exists.
-        if existImage(imageName):
-            genLog('(Judge-Build)  check existed = ok, name = %s' % imageName)
-            gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
-            return 'Success', hashResultRemote[1], gitCommitLog, build_result
-        else:
-            genLog('(Judge-Build)  check existed = failed, name = %s' % imageName)
-            gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
-            return 'Fail', hashResultRemote[1], gitCommitLog, build_result
+        gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
+        return build_verdict, hashResultRemote[1], gitCommitLog, build_result
     else:
         # matched and exist
         # verdict, GitHash, GitCommit, BuildMessage

@@ -6,7 +6,7 @@ import time
 def updateRepo(userCompilerLocalPath: str, lastHash: tuple, repoPath: str, uuid: str):
     cmd = ''
     commandResult = None
-    timeout = Config_Dict['GitTimeout'] * 4
+    timeout = Config_Dict['GitTimeout']
     if lastHash[0] != 1:  # no previous build or error occurred
         cmd = 'rm -rf * && git init && git remote add origin %s && git pull origin master' % repoPath
     else:
