@@ -1,4 +1,4 @@
-from .ConfigDeploy import Config_Dict
+from ConfigDeploy import Config_Dict
 from initalSet import initDatabase
 from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
 from dockerTools import existImage, cleanDocker, makeContainer, C
@@ -217,10 +217,10 @@ if __name__ == '__main__':
             r = requests.get(Config_Dict['serverFetchTask'], timeout=10)
             r.raise_for_status()
             task_Dict = r.json()
-            if task_Dict['code'] == 1:  # 1 for sleep
+            if task_Dict['code'] == 404:  # 1 for sleep
                 genLog('  Nothing can be done currently.')
                 continue
-            if task_Dict['code'] == 2:
+            if task_Dict['code'] == 200:
                 genLog(' Accept work %s, contains %d subwork.' % (task_Dict['workid'], len(task_Dict['target'])))
                 if 'newUser' in task_Dict.keys() and len(task_Dict['newUser']) != 0:
                     corSet = set(original_user)
@@ -241,56 +241,18 @@ if __name__ == '__main__':
                 # Assert whether the data is valid
                 validresult_Bool = checkValidWorkList(subtask_List)
                 if not validresult_Bool:
-                    # TODO: return false result
+                    genLog('(checkValidity Failed) Work:{}'.format(task_Dict['workid']))
                     continue
                 submitResult_list = []
                 for subtask_dict in subtask_List:
                     genLog('(Judge)  Judging: uuid:%s, repo:%s, stage:%d' % (
                         subtask_dict['uuid'], subtask_dict['repo'], subtask_dict['stage']))
-                    userCompilerPath = Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']
-                    # Check the hash value
-                    # 1. get local hash
-                    hashResultLocal = getGitHash(userCompilerPath)
-                    # 2. get remote hash
-                    hashResultRemote = getGitHash(subtask_dict['repo'])
-                    hashMatched = (hashResultLocal[0] == 1 and hashResultRemote[0] == 1 and hashResultLocal[1] ==
-                                   hashResultRemote[1])
-                    genLog('(Judge)    Judging:local:%s, remote:%s, matched:%s' % (
-                        hashResultLocal, hashResultRemote, hashMatched))
-                    # if not matched -> save a duplicated copy of the last version
-                    # this is a todo function
-                    # not matched: update the repo
-                    if not hashMatched:
-                        updateRepo(userCompilerPath, hashResultLocal, subtask_dict['repo'], subtask_dict['uuid'])
-                    # Matched -> check whether the image exists
-                    # Not matched -> build images
-                    # dockerimage:uuid[0:8] + hash[0:8]
-                    imageName = Config_Dict['dockerprefix'] + subtask_dict['uuid'] + '_' + hashResultRemote[1]
-                    task_Dict['imagename'] = imageName
-                    if (not hashMatched) or (not existImage(imageName)):
-                        # copy files to temporary
-                        _ = subprocess.Popen('mkdir temp && cp %s/* temp/')
-                        try:
-                            with open('temp/Dockerfile', 'w') as f:
-                                f.write(
-                                    'FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
-                                        Config_Dict['dockerprefix'] + 'base',
-                                        Config_Dict['compilerPath'] + '/' + subtask_dict['uuid']))
-                            image_built = C.images.build(path='./temp/', rm=True, tag=imageName)
-                        except docker.errors.BuildError as identifier:
-                            genLog('(Judge-Build)  Built Error occurred. target:%s -> %s' % (subtask_dict, identifier))
-                            continue
-                        except Exception as identifier:
-                            genLog(
-                                '(Judge-Build)  Unknown Error occurred. target:%s -> %s' % (subtask_dict, identifier))
-                            continue
-                        shutil.rmtree('./temp')
-                        genLog('(Judge-Build)  built finished. target:%s' % subtask_dict)
-                        # Check whether the images exists.
-                        if existImage(imageName):
-                            genLog('(Judge-Build)  check existed = ok, name = %s' % imageName)
-                        else:
-                            genLog('(Judge-Build)  check existed = failed, name = %s' % imageName)
+                    build_task = {
+                        'uuid': subtask_dict['uuid'],
+                        'repo': subtask_dict['repo']
+                    }
+                    verdict, GitHash, GitCommit, BuildMessage = build_compiler(build_task)
+
                     # build image finish
                     # here we can confirm that image must exists
                     # next we should get the type of the judging protocol
@@ -298,7 +260,7 @@ if __name__ == '__main__':
                     if subtask_dict['stage'] == 1:  # semantic check
                         checkResult = checkSemanticValidity(subtask_dict)
                         if not checkResult:
-                            # TODO: return false
+                            genLog('(checkSemanticValidity Failed) subWorkId:{}'.format(subtask_dict['subWorkId']))
                             continue
                         judgeResult = judgeSemantic(subtask_dict)
                         subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']

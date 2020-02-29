@@ -9,6 +9,13 @@ import (
 
 // /fetchTask
 func getTask(w http.ResponseWriter, r *http.Request) {
+	if len(semanticPool) == 0 && len(codegenPool) == 0 && len(optimizePool) == 0{
+		_ = json.NewEncoder(w).Encode(simpleSendFormat{
+			Code:    404,
+			Message: "No available work currently",
+		})
+		return
+	}
 	if len(semanticPool) != 0 {
 		poolElement := semanticPool[0]
 		var runningList []string
@@ -51,7 +58,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			var sentReq requestSemanticTaskFormat
-			sentReq.Code = 2
+			sentReq.Code = 200
 			sentReq.Target = make([]subtaskSemanticFormat, 0, 5)
 			for result.Next() {
 				var id string
@@ -118,7 +125,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			var sentReq requestCodegenTaskFormat
-			sentReq.Code = 2
+			sentReq.Code = 200
 			sentReq.Target = make([]subtaskCodegenFormat, 0, 5)
 			for result.Next() {
 				var id string
@@ -190,7 +197,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			var sentReq requestCodegenTaskFormat
-			sentReq.Code = 2
+			sentReq.Code = 200
 			sentReq.Target = make([]subtaskCodegenFormat, 0, 5)
 			for result.Next() {
 				var id string
