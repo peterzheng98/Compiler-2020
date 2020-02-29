@@ -18,8 +18,8 @@ func addDataSemantic(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Printf("[*] data:%s\n", record)
 	uid := n.Next()
-	SQLcommand := fmt.Sprintf("INSERT INTO Dataset_semantic(sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit, sema_instLimit) "+
-		"VALUES ('%s', '%s', %t, %.2f, %d, %d)", uid, record.SourceCode, record.Assertion, record.TimeLimit, record.MemoryLimit, record.InstLimit)
+	SQLcommand := fmt.Sprintf("INSERT INTO Dataset_semantic(sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit, sema_instLimit, sema_testcase) "+
+		"VALUES ('%s', '%s', %t, %.2f, %d, %d, '%s')", uid, record.SourceCode, record.Assertion, record.TimeLimit, record.MemoryLimit, record.InstLimit, record.Testcase)
 	_, err = executionExec(SQLcommand)
 	if err != nil {
 		fmt.Printf("runtime error: %s\n", err.Error())

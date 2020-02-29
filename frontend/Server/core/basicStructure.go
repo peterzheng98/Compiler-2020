@@ -39,6 +39,7 @@ type dataSemanticFormat struct {
 	TimeLimit   float32 `json:"time_limit, omitempty"`
 	InstLimit   int     `json:"inst_limit, omitempty"`
 	MemoryLimit int     `json:"memory_limit, omitempty"`
+	Testcase    string  `json:"testcase"`
 }
 
 type dataCodegenFormat struct {
