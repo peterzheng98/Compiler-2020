@@ -1,7 +1,8 @@
-from dockerTools import C, getImage
-from ConfigDeploy import Config_Dict
+from judge.src.dockerTools import C, getImage
+from judge.src.ConfigDeploy import Config_Dict
 import docker
 import requests
+import time
 
 
 def judgeSemantic(taskDict: dict):
@@ -18,6 +19,7 @@ def judgeSemantic(taskDict: dict):
     container = None
     try:
         # Find the image and try to start the image
+        start_time = time.time()
         container = C.containers.run(
             image=imageName,
             command='bash /testrun/judgeSemantic.bash',
@@ -25,6 +27,7 @@ def judgeSemantic(taskDict: dict):
             mem_limit=memoryLimit
         )
         container_running_result = container.wait(timeout=timeLimit)
+        time_interval = time.time() - container
         containerExitCode, stdout, stderr = container_running_result['StatusCode'], \
                                             container.log(stdout=True, stderr=False), \
                                             container.log(stdout=False, stderr=True)
@@ -32,14 +35,14 @@ def judgeSemantic(taskDict: dict):
             return '0', '==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
                 stdout[0:Config_Dict['MaxlogSize']],
-                stderr[0:Config_Dict['MaxlogSize']])
+                stderr[0:Config_Dict['MaxlogSize']]), time_interval
         else:
             return '1', '==Verdict==\nWrong Answer\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
                 stdout[0:Config_Dict['MaxlogSize']],
-                stderr[0:Config_Dict['MaxlogSize']])
+                stderr[0:Config_Dict['MaxlogSize']]), time_interval
     except docker.errors.ImageNotFound as identifier:
-        return '2', 'Docker Image not found, {}'.format(identifier)
+        return '2', 'Docker Image not found, {}'.format(identifier), -1
     except requests.exceptions.ReadTimeout as identifier:
         # Run time out, require kill the container
         containerExitCode, stdout, stderr = container_running_result['StatusCode'], \
@@ -52,9 +55,9 @@ def judgeSemantic(taskDict: dict):
         return '3', '==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
             containerExitCode,
             stdout[0:Config_Dict['MaxlogSize']],
-            stderr[0:Config_Dict['MaxlogSize']])
+            stderr[0:Config_Dict['MaxlogSize']]), timeLimit
     except Exception as identifier:
-        return '2', 'Unknown error occurred, {}'.format(identifier)
+        return '2', 'Unknown error occurred, {}'.format(identifier), timeLimit
 
 
 def judgeCodeGen(taskDict: dict):
@@ -65,4 +68,4 @@ def judgeCodeGen(taskDict: dict):
     2 for Runtime Error. tuple[1] for message. 3 for Timeout
     """
     # Here wait for Yunwei Ren's simulator
-    return '-1', 'Under development'
+    return '-1', 'Under development', -1, -1

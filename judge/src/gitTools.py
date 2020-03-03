@@ -1,4 +1,4 @@
-from ConfigDeploy import Config_Dict
+from judge.src.ConfigDeploy import Config_Dict
 import subprocess
 import time
 
@@ -7,28 +7,20 @@ def updateRepo(userCompilerLocalPath: str, lastHash: tuple, repoPath: str, uuid:
     cmd = ''
     commandResult = None
     timeout = Config_Dict['GitTimeout']
+    commandResult = None
     if lastHash[0] != 1:  # no previous build or error occurred
-        cmd = 'rm -rf * && git init && git remote add origin %s && git pull origin master' % repoPath
+        cmd = 'rm -rf * && rm -rf .git && git clone {} .'.format(repoPath)
     else:
-        archiveFileName = '%s.zip' % lastHash[1]
-        backupPath = Config_Dict['compilerBackupPath'] + '/' + uuid + '/'
-        cmd = 'zip -9 -r %s . && cp %s %s && rm %s && git pull -f' % (
-            archiveFileName, archiveFileName, backupPath, archiveFileName)
+        cmd = 'git pull'
     try:
         commandResult = subprocess.Popen(cmd, cwd=userCompilerLocalPath, stderr=subprocess.STDOUT,
                                          stdout=subprocess.PIPE, shell=True)
-        start_time = time.time()
-        while True:
-            if commandResult.poll() is not None:
-                break
-            seconds_passed = time.time() - start_time
-            if timeout and seconds_passed > timeout:
-                commandResult.terminate()
-                raise Exception()
-            time.sleep(0.1)
-    except Exception as identifier:
+        commandResult.wait(timeout)
+    except subprocess.TimeoutExpired as identifier:
+        commandResult.terminate()
         return 1, "Timeout"
-        pass
+    except Exception as identifier:
+        return 1, "Runtime Error: {}".format(identifier)
     return 0, commandResult.stdout.read().decode()
 
 

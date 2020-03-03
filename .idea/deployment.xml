@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="remote@172.16.3.152:22103">
+    <serverData>
+      <paths name="remote@172.16.3.152:22103">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/remote/compiler_judge/Compiler-2020-deploy" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

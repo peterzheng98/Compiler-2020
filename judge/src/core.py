@@ -1,9 +1,9 @@
-from ConfigDeploy import Config_Dict
-from initalSet import initDatabase
-from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
-from dockerTools import existImage, cleanDocker, makeContainer, C
-from judgeTools import judgeSemantic, judgeCodeGen
-from .gitTools import updateRepo, getGitHash, fetchGitCommit
+from judge.src.ConfigDeploy import Config_Dict
+from judge.src.initalSet import initDatabase
+from judge.src.validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
+from judge.src.dockerTools import existImage, cleanDocker, makeContainer, C
+from judge.src.judgeTools import judgeSemantic, judgeCodeGen
+from judge.src.gitTools import updateRepo, getGitHash, fetchGitCommit
 import sys
 import docker
 import requests
@@ -14,6 +14,8 @@ import shutil
 import time
 import subprocess
 
+from judge.src.coreModule import build_compiler
+
 localdataVersion = None
 original_user = []
 
@@ -22,114 +24,6 @@ def genLog(s: str):
     with open('JudgeLog.log', 'a') as f:
         timeStr = time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time()))
         f.write('[%s] %s\n' % (timeStr, s))
-
-
-def build_compiler(config_dict: dict):
-    assert 'uuid' in config_dict.keys()
-    assert 'repo' in config_dict.keys()
-    userCompilerPath = Config_Dict['compilerPath'] + '/' + config_dict['uuid']
-    # Check the hash value
-    # 1. get local hash
-    hashResultLocal = getGitHash(userCompilerPath)
-    # 2. get remote hash
-    hashResultRemote = getGitHash(config_dict['repo'])
-    hashMatched = (hashResultLocal[0] == 1 and hashResultRemote[0] == 1 and hashResultLocal[1] ==
-                   hashResultRemote[1])
-    genLog('(build_compiler)Judging:local:%s, remote:%s, matched:%s' % (hashResultLocal, hashResultRemote, hashMatched))
-    # if not matched -> save a duplicated copy of the last version
-    # not matched: update the repo
-    if not hashMatched:
-        updateRepo(userCompilerPath, hashResultLocal, config_dict['repo'], config_dict['uuid'])
-    # Matched -> check whether the image exists
-    # Not matched -> build images
-    # dockerimage:uuid + hash[0:8]
-    imageName = Config_Dict['dockerprefix'] + config_dict['uuid'] + '_' + hashResultRemote[1][0:8]
-    task_Dict['imagename'] = imageName
-    if (not hashMatched) or (not existImage(imageName)):
-        build_result = 'Not Available'
-        build_verdict = 'Fail'
-        # copy files to temporary
-        try:
-            _t = subprocess.Popen('mkdir temp && cp {}/* temp/'.format(userCompilerPath),
-                                  cwd=Config_Dict['compilerPath'])
-            _t.wait(10)
-            with open('temp/Dockerfile', 'w') as f:
-                f.write(
-                    'FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
-                        Config_Dict['dockerprefix'] + 'base',
-                        Config_Dict['compilerPath'] + '/' + config_dict['uuid']))
-            dockerProcess = subprocess.Popen(['docker', 'built', '-t', imageName, '.'],
-                                             cwd=os.path.join(Config_Dict['compilerPath'], 'temp'),
-                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            dockerProcess.wait(Config_Dict['GitTimeout'])
-            if dockerProcess.returncode == 0:
-                build_verdict = 'Success'
-            stdout_str = dockerProcess.stdout.readlines()
-            stdout_str = ''.join([i.decode() for i in stdout_str[:20]])
-            stderr_str = dockerProcess.stderr.readlines()
-            stderr_str = ''.join([i.decode() for i in stderr_str[:20]])
-            build_result = '==stdout==\n{}\n==stderr==\n{}'.format(stdout_str, stderr_str)
-        except subprocess.TimeoutExpired:
-            build_verdict = 'Timeout'
-            build_result = 'Build timeout'
-            genLog('(Judge-Build)  Built Timeout occurred. target:%s -> %s' % (config_dict['uuid'], config_dict['ident']))
-        except Exception as identifier:
-            build_verdict = 'Runtime Error'
-            build_result = 'Build Runtime Error, {}'.format(identifier)
-            genLog(
-                '(Judge-Build)  Built Runtime Error occurred. target:%s -> %s' % (config_dict['uuid'], config_dict['ident']))
-        _t = subprocess.Popen('rm -rf temp', cwd=Config_Dict['compilerPath'])
-        genLog('(Judge-Build)  built finished. target:%s' % subtask_dict)
-        gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
-        return build_verdict, hashResultRemote[1], gitCommitLog, build_result
-    else:
-        # matched and exist
-        # verdict, GitHash, GitCommit, BuildMessage
-        log = fetchGitCommit(userCompilerPath, hashResultRemote[1])
-        return 'Success', hashResultRemote[1], log, 'Recently built.'
-
-
-def updateUserList(userlist_Dict: dict):
-    olduserList_Dict = {}
-    updateList = []
-    insertList = []
-    ## There will be no remove strategies.
-    for uuid, repo in userlist_Dict.items():
-        ## If the user does not exists, insert the data
-        if uuid not in olduserList_Dict.keys():
-            insertList.append((uuid, repo))
-        elif olduserList_Dict[uuid] != repo:
-            updateList.append((uuid, repo))
-        original_user.append(uuid.copy())
-    genLog('(UpdateUser) Total Insertion: %d, Total Modification: %d' % (len(insertList), len(updateList)))
-    for i in updateList:
-        genLog('(UpdateUser) Modification: %s' % i)
-        uuid = i[0]
-        if not os.path.exists(Config_Dict['compilerPath'] + '/' + uuid):
-            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
-        else:
-            shutil.rmtree(Config_Dict['compilerPath'] + '/' + uuid)
-            genLog('(UpdateUser)     Folder with uuid %s not null, remove it and create an empty one.' % uuid)
-            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
-
-        if not os.path.exists(Config_Dict['compilerBackupPath'] + '/' + uuid):
-            os.makedirs(Config_Dict['compilerBackupPath'] + '/' + uuid)
-        else:
-            shutil.rmtree(Config_Dict['compilerBackupPath'] + '/' + uuid)
-            genLog('(UpdateUser)     Folder(Backup) with uuid %s not null, remove it and create an empty one.' % uuid)
-            os.makedirs(Config_Dict['compilerBackupPath'] + '/' + uuid)
-    for i in insertList:
-        genLog('(UpdateUser) Insertion: %s' % i)
-        uuid = i[0]
-        ## make dir for the user.
-        if not os.path.exists(Config_Dict['compilerPath'] + '/' + uuid):
-            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
-        else:
-            shutil.rmtree(Config_Dict['compilerPath'] + '/' + uuid)
-            genLog('(UpdateUser)     Folder with uuid %s not null, remove it and create an empty one.' % uuid)
-            os.makedirs(Config_Dict['compilerPath'] + '/' + uuid)
-    genLog('(UpdateUser) Finished')
-    pass
 
 
 def resetAll():
@@ -154,30 +48,7 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2:
         print('Error in arguments. Vaild arguments are clean, reset.')
         exit(0)
-    print('Preparation: Fetch the user repo list')
-    genLog('Preparation: Fetch the user repo list')
-    # Fetch the user repo list and update
-    url = Config_Dict['serverFetchUser']
-    r = requests.get(url)
-    userList_Dict = r.json()
-    RetryCount = 0
-    while len(userList_Dict) == 0 or userList_Dict['code'] != 200:
-        print('Retry #{}: Request again after 1s. Last receive: {}'.format(RetryCount, userList_Dict))
-        genLog('Retry #{}: Request again after 1s. Last receive: {}'.format(RetryCount, userList_Dict))
-        time.sleep(1)
-        url = Config_Dict['serverFetchUser']
-        r = requests.get(url)
-        userList_Dict = r.json()
-        RetryCount = RetryCount + 1
-    userList_Dict = userList_Dict['message']
-    print('  User list fetched, %d records.' % (len(userList_Dict)))
-    genLog('=' * 20 + '\nUser list fetched, %d records.' % (len(userList_Dict)))
-    for k, v in userList_Dict.items():
-        genLog('(User) %s - %s' % (k, v))
-    genLog('=' * 20)
-    # Update the database
-    updateUserList(userList_Dict)
-    genLog('=' * 20)
+
     genLog('  Check base container')
     imageLists = C.images.list()
     imageTags = [i.tags for i in imageLists]
@@ -196,13 +67,14 @@ if __name__ == '__main__':
     while True:
         r = None
         try:
+            # ---------------Server Build Task Started------------------
             r = requests.get(Config_Dict['serverFetchCompileTask'], timeout=2)
             r.raise_for_status()
             build_task_Dict = r.json()
             if build_task_Dict['code'] == 200:
                 genLog('Build Task received: {}'.format(build_task_Dict['message']))
                 build_task = build_task_Dict['message']
-                verdict, GitHash, GitCommit, BuildMessage = build_compiler(build_task)
+                verdict, GitHash, GitCommit, BuildMessage, useless = build_compiler(build_task)
                 build_task['verdict'] = verdict
                 build_task['gitHash'] = GitHash
                 build_task['gitCommit'] = GitCommit
@@ -212,8 +84,10 @@ if __name__ == '__main__':
                     time.sleep(1)
                     r = requests.post(Config_Dict['serverSubmitCompileTask'], timeout=2, data=json.dumps(build_task))
                 continue
-
             time.sleep(1)
+            # ---------------Server Fetch Build Ended-------------------
+
+            # ---------------Server Fetch Task Started------------------
             r = requests.get(Config_Dict['serverFetchTask'], timeout=10)
             r.raise_for_status()
             task_Dict = r.json()
@@ -222,21 +96,6 @@ if __name__ == '__main__':
                 continue
             if task_Dict['code'] == 200:
                 genLog(' Accept work %s, contains %d subwork.' % (task_Dict['workid'], len(task_Dict['target'])))
-                if 'newUser' in task_Dict.keys() and len(task_Dict['newUser']) != 0:
-                    corSet = set(original_user)
-                    addRequest = {}
-                    for uuid, repo in task_Dict['newUser'].items():
-                        if uuid not in corSet:
-                            addRequest[uuid] = repo
-                    if len(addRequest) != 0:
-                        print('  User list updated, %d records.' % (len(userList_Dict)))
-                        genLog('=' * 20 + '\nUser list fetched, %d records.' % (len(userList_Dict)))
-                        for k, v in userList_Dict.items():
-                            genLog('(User) %s - %s' % (k, v))
-                        genLog('=' * 20)
-                        # Update the database
-                        updateUserList(addRequest)
-                        genLog('=' * 20)
                 subtask_List = task_Dict['target']
                 # Assert whether the data is valid
                 validresult_Bool = checkValidWorkList(subtask_List)
@@ -251,7 +110,7 @@ if __name__ == '__main__':
                         'uuid': subtask_dict['uuid'],
                         'repo': subtask_dict['repo']
                     }
-                    verdict, GitHash, GitCommit, BuildMessage = build_compiler(build_task)
+                    verdict, GitHash, GitCommit, BuildMessage, imageName = build_compiler(build_task)
 
                     # build image finish
                     # here we can confirm that image must exists
@@ -262,12 +121,15 @@ if __name__ == '__main__':
                         if not checkResult:
                             genLog('(checkSemanticValidity Failed) subWorkId:{}'.format(subtask_dict['subWorkId']))
                             continue
-                        judgeResult = judgeSemantic(subtask_dict)
+                        judgeResult = ('', '')
+                        judgeResult[0], judgeResult[1], time_interval = judgeSemantic(subtask_dict)
                         subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']
                         subtaskResult_dict['JudgeResult'] = judgeResult
                         subtaskResult_dict['Judger'] = Config_Dict['judgerName']
-                        subtaskResult_dict['JudgeTime'] = time.strftime('%Y.%m.%d %H:%M:%S',
-                                                                        time.localtime(time.time()))
+                        subtaskResult_dict['JudgeTime'] = '{:.6f}/0/{}'.format(time_interval,
+                                                                               time.strftime('%Y.%m.%d %H:%M:%S',
+                                                                                             time.localtime(
+                                                                                                 time.time())))
                         subtaskResult_dict['testCase'] = subtask_dict['testCase']
                         subtaskResult_dict['judgetype'] = subtask_dict['stage']
                         subtaskResult_dict['uuid'] = subtask_dict['uuid']
@@ -282,14 +144,16 @@ if __name__ == '__main__':
                     elif subtask_dict['stage'] == 2 or subtask_dict['stage'] == 3:
                         checkResult = checkCodegenValidity(subtask_dict)
                         if not checkResult:
-                            # TODO: return false
+                            genLog('(checkCodegenValidity Failed) subWorkId:{}'.format(subtask_dict['subWorkId']))
                             continue
-                        judgeResult = judgeCodeGen(subtask_dict)
+                        judgeResult = ('', '')
+                        judgeResult[0], judgeResult[1], time_interval, execution_cycle = judgeCodeGen(subtask_dict)
                         subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']
                         subtaskResult_dict['JudgeResult'] = judgeResult
                         subtaskResult_dict['Judger'] = Config_Dict['judgerName']
-                        subtaskResult_dict['JudgeTime'] = time.strftime('%Y.%m.%d %H:%M:%S',
-                                                                        time.localtime(time.time()))
+                        subtaskResult_dict['JudgeTime'] = '{:.6f}/{}/{}'.format(time_interval, execution_cycle,
+                                                                                time.strftime('%Y.%m.%d %H:%M:%S',
+                                                                                              time.localtime(time.time())))
                         subtaskResult_dict['testCase'] = subtask_dict['testCase']
                         subtaskResult_dict['judgetype'] = subtask_dict['stage']
                         subtaskResult_dict['uuid'] = subtask_dict['uuid']
