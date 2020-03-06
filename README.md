@@ -652,6 +652,9 @@ gcc构筑命令：`./configure --prefix=/opt/riscv --with-arch=rv32ima --with-ab
 
 有任何问题请在这个Repo直接发起Issue，对语言规则有疑问的使用Question标签，发现编译器评测的bug的使用Bug标签，对测试集的问题/发现测试集重的bug的使用`benchmark and data`/`benchmark-URGENT`标签。
 
+1. 关于提交：
+
+你需要提交一个repo，且repo的根目录中必须包括：build.sh（类似于makefile中的make all的角色），semantic.sh（类似于g++ -fsyntax-only），codegen.sh（类似于g++ xxx.cpp），optimize.sh（类似于g++ xxx.cpp -O2）。
 ## Update Log
 
 #### 6.1 Update
