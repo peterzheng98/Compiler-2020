@@ -4,7 +4,7 @@
 
 补充2: 测试点信息：Semantic Check：187(-3)    Code generation：78   Optimization Test：0
 
-补充3: 评测平台即将上线。
+补充3: 评测平台即将上线，链接：http://compiler.onlinejudge.peterzheng.cn/。
 
 信息：最新测试集合GitHash `fda9271809e61290cfeb35e80b85aee6d75f416b` 最后更新：2020年2月26日
 
