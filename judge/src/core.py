@@ -1,9 +1,9 @@
-from judge.src.ConfigDeploy import Config_Dict
-from judge.src.initalSet import initDatabase
-from judge.src.validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
-from judge.src.dockerTools import existImage, cleanDocker, makeContainer, C
-from judge.src.judgeTools import judgeSemantic, judgeCodeGen
-from judge.src.gitTools import updateRepo, getGitHash, fetchGitCommit
+from ConfigDeploy import Config_Dict
+from initalSet import initDatabase
+from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
+from dockerTools import existImage, cleanDocker, makeContainer, C
+from judgeTools import judgeSemantic, judgeCodeGen
+from gitTools import updateRepo, getGitHash, fetchGitCommit
 import sys
 import docker
 import requests
@@ -14,16 +14,18 @@ import shutil
 import time
 import subprocess
 
-from judge.src.coreModule import build_compiler
+from coreModule import build_compiler
 
 localdataVersion = None
 original_user = []
 
 
 def genLog(s: str):
+    timeStr = ''
     with open('JudgeLog.log', 'a') as f:
         timeStr = time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time()))
         f.write('[%s] %s\n' % (timeStr, s))
+    print('[{}] {}'.format(timeStr, s))
 
 
 def resetAll():
@@ -49,19 +51,20 @@ if __name__ == '__main__':
         print('Error in arguments. Vaild arguments are clean, reset.')
         exit(0)
 
-    genLog('  Check base container')
-    imageLists = C.images.list()
-    imageTags = [i.tags for i in imageLists]
-    if (Config_Dict['dockerprefix'] + 'base') in imageTags:
-        print('  Base image detected!')
-    else:
-        genLog('  Make base container')
-        result = makeContainer(Config_Dict['dockerbasepath'], Config_Dict['dockerprefix'] + 'base')
-        if not result[0]:
-            genLog('Error: Make base container failed!')
-            genLog(result[1])
-            print('Make base container failed, check the output log')
-            exit(0)
+    # genLog('  Check base container')
+    # imageLists = C.images.list()
+    # imageTags = [i.tags for i in imageLists]
+    # print(imageTags, '->', Config_Dict['dockerprefix'] + 'base:latest')
+    # if (Config_Dict['dockerprefix'] + 'base:latest') in imageTags:
+    #     print('  Base image detected!')
+    # else:
+    #     genLog('  Make base container')
+    #     result = makeContainer(Config_Dict['dockerbasepath'], Config_Dict['dockerprefix'] + 'base')
+    #     if not result[0]:
+    #         genLog('Error: Make base container failed!')
+    #         genLog(result[1])
+    #         print('Make base container failed, check the output log')
+    #         exit(0)
 
     print('Ready to judge')
     while True:
@@ -71,6 +74,7 @@ if __name__ == '__main__':
             r = requests.get(Config_Dict['serverFetchCompileTask'], timeout=2)
             r.raise_for_status()
             build_task_Dict = r.json()
+            genLog(' Build Stage Task: {}'.format(build_task_Dict))
             if build_task_Dict['code'] == 200:
                 genLog('Build Task received: {}'.format(build_task_Dict['message']))
                 build_task = build_task_Dict['message']
@@ -79,6 +83,7 @@ if __name__ == '__main__':
                 build_task['gitHash'] = GitHash
                 build_task['gitCommit'] = GitCommit
                 build_task['message'] = BuildMessage
+                genLog('(Build result) {}'.format(build_task))
                 r = requests.post(Config_Dict['serverSubmitCompileTask'], timeout=2, data=json.dumps(build_task))
                 while r.json()['code'] != 200:
                     time.sleep(1)
@@ -91,6 +96,7 @@ if __name__ == '__main__':
             r = requests.get(Config_Dict['serverFetchTask'], timeout=10)
             r.raise_for_status()
             task_Dict = r.json()
+            genLog(' Judge Stage Task: {}'.format(task_Dict))
             if task_Dict['code'] == 404:  # 1 for sleep
                 genLog('  Nothing can be done currently.')
                 continue

@@ -1,9 +1,9 @@
-from judge.src.ConfigDeploy import Config_Dict
-from judge.src.initalSet import initDatabase
-from judge.src.validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
-from judge.src.dockerTools import existImage, cleanDocker, makeContainer, C
-from judge.src.judgeTools import judgeSemantic, judgeCodeGen
-from judge.src.gitTools import updateRepo, getGitHash, fetchGitCommit
+from ConfigDeploy import Config_Dict
+from initalSet import initDatabase
+from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
+from dockerTools import existImage, cleanDocker, makeContainer, C
+from judgeTools import judgeSemantic, judgeCodeGen
+from gitTools import updateRepo, getGitHash, fetchGitCommit
 import sys
 import docker
 import requests
@@ -16,9 +16,11 @@ import subprocess
 
 
 def genLog(s: str):
+    timeStr = ''
     with open('JudgeLog.log', 'a') as f:
         timeStr = time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time()))
         f.write('[%s] %s\n' % (timeStr, s))
+    print('[{}] {}'.format(timeStr, s))
 
 
 def build_compiler(config_dict: dict):
@@ -27,10 +29,12 @@ def build_compiler(config_dict: dict):
     userCompilerPath = Config_Dict['compilerPath'] + '/' + config_dict['uuid']
     git_build_stdout = ''
     git_build_stderr = ''
+    genLog('[coreModule.py] Generating repo with path: {}'.format(userCompilerPath))
     if not os.path.exists(userCompilerPath):
         os.makedirs(userCompilerPath)
         try:
-            process = subprocess.Popen(['git', 'clone', config_dict['uuid'], '.'], cwd=userCompilerPath,
+            genLog('[coreModule.py] Start cloning object.')
+            process = subprocess.Popen(['git', 'clone', config_dict['repo'], '.'], cwd=userCompilerPath,
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             process.wait(Config_Dict['GitTimeout'])
             git_build_stdout = process.stdout.readlines()
@@ -39,10 +43,12 @@ def build_compiler(config_dict: dict):
             git_build_stderr = ''.join([i.decode() for i in git_build_stderr])
         except subprocess.TimeoutExpired as identifier:
             git_build_stderr = 'Git Timeout'
+            genLog('[coreModule.py] Git Timeout')
             process.terminate()
             return 'Fail', 'N/A', 'N/A', git_build_stderr, ''
         except Exception as identifier:
             git_build_stderr = 'GitRuntime Error: {}'.format(identifier)
+            genLog('[coreModule.py] {}'.format(git_build_stderr))
             return 'Fail', 'N/A', 'N/A', git_build_stderr, ''
     # Check the hash value
     # 1. get local hash
@@ -66,15 +72,18 @@ def build_compiler(config_dict: dict):
         # copy files to temporary
         dockerProcess = None
         try:
-            _t = subprocess.Popen('mkdir temp && cp {}/* temp/'.format(userCompilerPath),
+            _t = subprocess.Popen(['mkdir', 'temp'],
                                   cwd=Config_Dict['compilerPath'])
             _t.wait(10)
-            with open('temp/Dockerfile', 'w') as f:
+            _t = subprocess.Popen(['cp', '-r',  userCompilerPath, '/*', 'temp/'], cwd=Config_Dict['compilerPath'])
+            _t.wait(10)
+            print('Finished')
+            srt = input()
+            with open(Config_Dict['compilerPath'] + '/temp/Dockerfile', 'w') as f:
                 f.write(
-                    'FROM %s\nADD %s /compiler\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
-                        Config_Dict['dockerprefix'] + 'base',
-                        Config_Dict['compilerPath'] + '/' + config_dict['uuid']))
-            dockerProcess = subprocess.Popen(['docker', 'built', '-t', imageName, '.'],
+                    'FROM %s\nADD * /compiler/\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
+                        Config_Dict['dockerprefix'] + 'base'))
+            dockerProcess = subprocess.Popen(['docker', 'build', '-t', imageName, '.'],
                                              cwd=os.path.join(Config_Dict['compilerPath'], 'temp'),
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             dockerProcess.wait(Config_Dict['GitTimeout'])
@@ -95,9 +104,9 @@ def build_compiler(config_dict: dict):
             build_verdict = 'Runtime Error'
             build_result = 'Build Runtime Error, {}'.format(identifier)
             genLog(
-                '(Judge-Build)  Built Runtime Error occurred. target:%s -> %s' % (
-                config_dict['uuid'], config_dict['ident']))
-        _t = subprocess.Popen('rm -rf temp', cwd=Config_Dict['compilerPath'])
+                '(Judge-Build)  Built Runtime Error occurred. %s / target:%s -> %s' % (
+                identifier,config_dict['uuid'], config_dict['ident']))
+        _t = subprocess.Popen(['rm', '-rf', 'temp'], cwd=Config_Dict['compilerPath'])
         genLog('(Judge-Build)  built finished. target:%s' % config_dict)
         gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
         return build_verdict, hashResultRemote[1], gitCommitLog, build_result, imageName

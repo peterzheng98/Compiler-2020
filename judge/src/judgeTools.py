@@ -1,5 +1,5 @@
-from judge.src.dockerTools import C, getImage
-from judge.src.ConfigDeploy import Config_Dict
+from dockerTools import C, getImage
+from ConfigDeploy import Config_Dict
 import docker
 import requests
 import time

@@ -1,4 +1,4 @@
-from judge.src.ConfigDeploy import Config_Dict
+from ConfigDeploy import Config_Dict
 import subprocess
 import time
 
@@ -32,7 +32,7 @@ def getGitHash(pathORurl: str):
     gitcmd = 'git ls-remote %s | grep heads/master' % pathORurl
     version = []
     try:
-        version = subprocess.check_output(gitcmd, shell=True, timeout=Config_Dict['GitTimeout']).decode().strip().split(
+        version = subprocess.check_output(gitcmd, shell=True, timeout=30).decode().strip().split(
             '\t')
         if len(version[0]) != 40:
             return 2, 'Length error, received [%s] with raw [%s]' % (version[0], '\t'.join(version))

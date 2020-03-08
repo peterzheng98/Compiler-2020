@@ -26,5 +26,8 @@ RUN apt-get update
 RUN apt-get install -y python3.7
 RUN apt-get install -y vim
 RUN rm -rf /var/lib/apt/lists/*
+COPY java/* /ulib/java/
+COPY kotlin/* /ulib/kotlin/
+RUN chmod 777 /ulib
 
 CMD ["bash"]
