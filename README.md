@@ -4,7 +4,11 @@
 
 补充2: 测试点信息：Semantic Check：187(-3)    Code generation：78   Optimization Test：0
 
-补充3: 评测平台即将上线，链接(`http://compiler.onlinejudge.peterzheng.cn:10567/`)，目前还在调试，调试完成后将会删除目前数据库的内容。正式开始后评测时间为每天10：00至22：00。
+补充3: 评测平台即将上线，链接(`http://compiler.onlinejudge.peterzheng.cn:10567/`)，目前还在调试，调试完成后将会删除目前数据库的内容。
+
+补充4：正式开始后评测时间为每天10：00至22：00，预计开服时间：2020年3月16日。
+
+补充5：（重要）为了减少repo的大小，请参考本页面底部的FAQ-2调用docker内部已有的库，需要的库请联系TA，放入Docker，DDL：3月16日 22：00。
 
 信息：最新测试集合GitHash `fda9271809e61290cfeb35e80b85aee6d75f416b` 最后更新：2020年2月26日
 
@@ -655,6 +659,21 @@ gcc构筑命令：`./configure --prefix=/opt/riscv --with-arch=rv32ima --with-ab
 1. 关于提交：
 
 你需要提交一个repo，且repo的根目录中必须包括：build.sh（类似于makefile中的make all的角色），semantic.sh（类似于g++ -fsyntax-only），codegen.sh（类似于g++ xxx.cpp），optimize.sh（类似于g++ xxx.cpp -O2）。
+
+2. 关于内部已经存储的库：
+
+为了减少git所消耗的时间，所需要的部分依赖库已经集成在Docker中，以下均为绝对路径。
+
+| Component | File Name | Path | Language |
+|:-----------:|-----------|------|:----------:|
+|ANTLR 4.8| antlr-4.8-complete.jar |`/ulib/java/antlr-4.8-complete.jar`|Java|
+|ANTLR 4.7.2| antlr-4.7.2-complete.jar |`/ulib/java/antlr-4.7.2-complete.jar`|Java|
+|ANTLR 4.7.1| antlr-4.7.1-complete.jar |`/ulib/java/antlr-4.7.1-complete.jar`|Java|
+|ANTLR 4.7| antlr-4.7-complete.jar |`/ulib/java/antlr-4.7-complete.jar`|Java|
+|ANTLR 4.6| antlr-4.6-complete.jar |`/ulib/java/antlr-4.6-complete.jar`|Java|
+
+需要的库请联系TA，放入Docker，DDL：3月16日 22：00。
+
 ## Update Log
 
 #### 6.1 Update
