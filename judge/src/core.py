@@ -14,7 +14,7 @@ import shutil
 import time
 import subprocess
 
-from coreModule import build_compiler
+from coreModule import build_compiler, build_compiler_local
 
 localdataVersion = None
 original_user = []
@@ -116,7 +116,7 @@ if __name__ == '__main__':
                         'uuid': subtask_dict['uuid'],
                         'repo': subtask_dict['repo']
                     }
-                    verdict, GitHash, GitCommit, BuildMessage, imageName = build_compiler(build_task)
+                    verdict, GitHash, GitCommit, BuildMessage, imageName = build_compiler_local(build_task)
 
                     # build image finish
                     # here we can confirm that image must exists
@@ -127,7 +127,8 @@ if __name__ == '__main__':
                         if not checkResult:
                             genLog('(checkSemanticValidity Failed) subWorkId:{}'.format(subtask_dict['subWorkId']))
                             continue
-                        judgeResult = ('', '')
+                        judgeResult = ['', '']
+                        subtask_dict['imagename'] = imageName
                         judgeResult[0], judgeResult[1], time_interval = judgeSemantic(subtask_dict)
                         subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']
                         subtaskResult_dict['JudgeResult'] = judgeResult
@@ -139,6 +140,8 @@ if __name__ == '__main__':
                         subtaskResult_dict['testCase'] = subtask_dict['testCase']
                         subtaskResult_dict['judgetype'] = subtask_dict['stage']
                         subtaskResult_dict['uuid'] = subtask_dict['uuid']
+                        subtaskResult_dict['git_hash'] = GitHash
+                        subtaskResult_dict['taskID'] = subtask_dict['taskID']
                         submitResult_list.append(subtaskResult_dict)
                         genLog('(Judge-Semantic)  uuid={}, subWorkId={}, judgeResult={}, Time={}, testCaseId={}'.format(
                             subtask_dict['uuid'],
@@ -185,7 +188,7 @@ if __name__ == '__main__':
                     try:
                         r = requests.post(url=Config_Dict['serverSubmitTask'],
                                           data=json.dumps(submitResult_list, ensure_ascii=False))
-                        if r.json()['result'] == 'ok':
+                        if r.json()['code'] == 200:
                             genLog('(Judge-Submit)  Sent!')
                             break
                         genLog('(Judge-Submit)  Not sent! Retry after 1s.')

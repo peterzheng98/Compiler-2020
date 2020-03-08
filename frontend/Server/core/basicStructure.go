@@ -85,11 +85,13 @@ type subtaskCodegenFormat struct {
 type requestCodegenTaskFormat struct {
 	Code   int                    `json:"code"`
 	Target []subtaskCodegenFormat `json:"target"`
+	WorkID string                  `json:"workid"`
 }
 
 type requestSemanticTaskFormat struct {
 	Code   int                     `json:"code"`
 	Target []subtaskSemanticFormat `json:"target"`
+	WorkID string                  `json:"workid"`
 }
 
 type requestJudgeFormat struct {

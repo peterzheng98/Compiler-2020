@@ -213,4 +213,8 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 			logger(fmt.Sprintf("Runtime error: %s", err.Error()), 1)
 		}
 	}
+	_ = json.NewEncoder(w).Encode(simpleSendFormat{
+		Code:    200,
+		Message: "ok, received",
+	})
 }

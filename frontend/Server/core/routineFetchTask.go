@@ -60,6 +60,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 			var sentReq requestSemanticTaskFormat
 			sentReq.Code = 200
 			sentReq.Target = make([]subtaskSemanticFormat, 0, 5)
+			sentReq.WorkID = poolElement.recordID
 			for result.Next() {
 				var id string
 				var sourceCode string
@@ -127,6 +128,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 			var sentReq requestCodegenTaskFormat
 			sentReq.Code = 200
 			sentReq.Target = make([]subtaskCodegenFormat, 0, 5)
+			sentReq.WorkID = poolElement.recordID
 			for result.Next() {
 				var id string
 				var sourceCode string
@@ -199,6 +201,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 			var sentReq requestCodegenTaskFormat
 			sentReq.Code = 200
 			sentReq.Target = make([]subtaskCodegenFormat, 0, 5)
+			sentReq.WorkID = poolElement.recordID
 			for result.Next() {
 				var id string
 				var sourceCode string
