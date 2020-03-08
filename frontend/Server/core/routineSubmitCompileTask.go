@@ -61,7 +61,7 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer result.Close()
-
+		poolElement.runningSet = make(map[string]bool)
 		for result.Next() {
 			var id string
 			err = result.Scan(&id)
@@ -69,6 +69,7 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 				logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 1)
 			}
 			poolElement.pending = append(poolElement.pending, id)
+
 		}
 		semanticPool = append(semanticPool, poolElement)
 		// update user status

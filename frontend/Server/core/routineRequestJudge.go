@@ -29,7 +29,7 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 	var timeUnix = time.Now().Unix()
 	compilePool[fmt.Sprint(timeUnix)] = poolElement
 	logger(fmt.Sprintf("=========================================="), 1)
-	logger(fmt.Sprintf("[*] Request Added, current semantic pool: length=%d", len(compilePool)), 1)
+	logger(fmt.Sprintf("[*] Request Added, current compiler pool: length=%d", len(compilePool)), 1)
 	for idx, d := range compilePool {
 		logger(fmt.Sprintf("Record[%s]: %s", idx, d), 0)
 	}
