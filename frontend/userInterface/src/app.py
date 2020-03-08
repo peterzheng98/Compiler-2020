@@ -94,7 +94,7 @@ def judge_detail(judgeid: str, judgepid: str):
         r2 = HTTPReq.post(path.fetchJudgeResultDetail, timeout=5, data=json.dumps(dat2))
         print('==>{}'.format(r2.json()))
         record_list = []
-        if r2.json()['code'] != 200:
+        if r2.json()['code'] != 200 or r2.json()['message'] is None:
             record_list = []
         else:
             for Idx, D in enumerate(r2.json()['message']):

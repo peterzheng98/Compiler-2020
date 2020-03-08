@@ -56,5 +56,5 @@ func main() {
 	http.HandleFunc("/getStatusBrief", getJudgeResult)
 	http.HandleFunc("/getStatusDetail", getJudgeResultDetail)
 	fmt.Print("Start to serve\n")
-	http.ListenAndServe(":10430", nil)
+	http.ListenAndServe(":43010", nil)
 }

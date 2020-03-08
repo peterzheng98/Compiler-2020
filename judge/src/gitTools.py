@@ -50,13 +50,20 @@ def fetchGitCommit(repoPath: str, gitHash: str) -> str:
         git_log.wait(2)
         stdout_git_log = git_log.stdout.readlines()
         stdout_git_log = ''.join([i.decode() for i in stdout_git_log]).split('commit')
-        log = 'commit' + stdout_git_log[stdout_git_log.index(gitHash[1])]
+        idx = 0
+        for i, s in enumerate(stdout_git_log):
+            if gitHash in s:
+                idx = i
+                break
+        log = 'commit' + stdout_git_log[idx]
     except Exception as identifier:
         genLogInGit('Error when matching existing repo: {}'.format(identifier))
     return log
 
 
 def genLogInGit(s: str):
+    timeStr = ''
     with open('JudgeLog.log', 'a') as f:
         timeStr = time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time()))
         f.write('[%s] %s\n' % (timeStr, s))
+    print('[{}] {}'.format(timeStr, s))
