@@ -83,7 +83,8 @@ def judge_detail(judgeid: str, judgepid: str):
                                    judge_list=[],
                                    prev_page=0)
         judge_list = [None]
-        judge_list[0] = ('0-Build', '1', 100.0) if 'Success' in r.json()['message']['buildResult'] else ('0-Build', '0', 100.0)
+        judge_list[0] = ('0-Build', '1', 100.0) if 'Success' in r.json()['message']['buildResult'] else (
+        '0-Build', '0', 0.0)
         passed_attr = 'btn btn-sm btn-success custom-xsmall-font custom-bold-font'
         failed_attr = 'btn btn-sm btn-danger custom-bold-font custom-xsmall-font'
         std_font_attr = 'custom-small-font'
@@ -99,9 +100,10 @@ def judge_detail(judgeid: str, judgepid: str):
         else:
             for Idx, D in enumerate(r2.json()['message']):
                 sub_list = [(std_font_attr, '', Idx), (std_font_attr, '',
-                                             '1-Semantic' if D[0] == '1' else '2-Codegen' if D[0] == '2' else '3-Optimize' if
-                                             D[0] == '3' else 'Unknown'), (std_font_attr, '', D[1])]
-                if D[2][0] == '1':
+                                                       '1-Semantic' if D[0] == '1' else '2-Codegen' if D[
+                                                                                                           0] == '2' else '3-Optimize' if
+                                                       D[0] == '3' else 'Unknown'), (std_font_attr, '', D[1])]
+                if D[2][0] == '0':
                     sub_list.append((passed_attr, '', 'passed'))
                 else:
                     sub_list.append((failed_attr, '', 'failed'))
@@ -122,7 +124,8 @@ def judge_detail(judgeid: str, judgepid: str):
                 else:
                     negative[elem[1][2]] = negative[elem[1][2]] + 1
             for k, v in positive.items():
-                judge_list.append((k, '{}'.format(v), 100.0 * v / (v + negative[k]), '{}'.format(negative[k]), 100.0 - 100.0 * v / (v + negative[k])))
+                judge_list.append((k, '{}'.format(v), '{:.2f}'.format(100.0 * v / (v + negative[k])),
+                                   '{}'.format(negative[k]), '{:.2f}'.format(100.0 - 100.0 * v / (v + negative[k]))))
         return render_template('judge_detail.html',
                                webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
                                content_title='Details for Record #{}'.format(judgeid),

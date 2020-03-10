@@ -3,8 +3,8 @@ from ConfigDeploy import Config_Dict
 import docker
 import requests
 import time
-import subprocess
 import os
+import base64
 
 
 def judgeSemantic(taskDict: dict):
@@ -46,13 +46,13 @@ def judgeSemantic(taskDict: dict):
         if assertion == (containerExitCode == 0):
             return '0', '==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
-                stdout[0:Config_Dict['MaxlogSize']].decode(),
-                stderr[0:Config_Dict['MaxlogSize']].decode()), time_interval
+                base64.b64encode(stdout[0:Config_Dict['MaxlogSize']].decode()),
+                base64.b64encode(stderr[0:Config_Dict['MaxlogSize']].decode())), time_interval
         else:
             return '1', '==Verdict==\nWrong Answer\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
-                stdout[0:Config_Dict['MaxlogSize']].decode(),
-                stderr[0:Config_Dict['MaxlogSize']].decode()), time_interval
+                base64.b64encode(stdout[0:Config_Dict['MaxlogSize']].decode()),
+                base64.b64encode(stderr[0:Config_Dict['MaxlogSize']].decode())), time_interval
 
     except docker.errors.ImageNotFound as identifier:
         return '2', 'Docker Image not found, {}'.format(identifier), -1
@@ -67,8 +67,8 @@ def judgeSemantic(taskDict: dict):
             pass
         return '3', '==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
             containerExitCode,
-            stdout[0:Config_Dict['MaxlogSize']].decode(),
-            stderr[0:Config_Dict['MaxlogSize']].decode()), timeLimit
+            base64.b64encode(stdout[0:Config_Dict['MaxlogSize']].decode()),
+            base64.b64encode(stderr[0:Config_Dict['MaxlogSize']].decode())), timeLimit
     except Exception as identifier:
         return '2', 'Unknown error occurred, {}'.format(identifier), timeLimit
 
