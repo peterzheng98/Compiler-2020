@@ -51,21 +51,6 @@ if __name__ == '__main__':
         print('Error in arguments. Vaild arguments are clean, reset.')
         exit(0)
 
-    # genLog('  Check base container')
-    # imageLists = C.images.list()
-    # imageTags = [i.tags for i in imageLists]
-    # print(imageTags, '->', Config_Dict['dockerprefix'] + 'base:latest')
-    # if (Config_Dict['dockerprefix'] + 'base:latest') in imageTags:
-    #     print('  Base image detected!')
-    # else:
-    #     genLog('  Make base container')
-    #     result = makeContainer(Config_Dict['dockerbasepath'], Config_Dict['dockerprefix'] + 'base')
-    #     if not result[0]:
-    #         genLog('Error: Make base container failed!')
-    #         genLog(result[1])
-    #         print('Make base container failed, check the output log')
-    #         exit(0)
-
     print('Ready to judge')
     while True:
         r = None

@@ -3,6 +3,8 @@ from ConfigDeploy import Config_Dict
 import docker
 import requests
 import time
+import subprocess
+import os
 
 
 def judgeSemantic(taskDict: dict):
@@ -20,11 +22,20 @@ def judgeSemantic(taskDict: dict):
     try:
         # Find the image and try to start the image
         start_time = time.time()
+        path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
+        open(os.join(path_prefix, 'judgeSemantic.bash'), 'w').write(
+            'cat /judgeData/testdata.txt | bash /compiler/semantic.sh')
+        open(os.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
         container = C.containers.run(
             image=imageName,
-            command='bash /testrun/judgeSemantic.bash',
+            command='bash /judgeData/judgeSemantic.bash',
             detach=True, stdout=True, stderr=True,
-            mem_limit=memoryLimit
+            mem_limit=memoryLimit, auto_remove=True,
+            volumes={
+                os.path.join(Config_Dict['compilerPath'], 'judgeData'): {
+                    'bind': '/judgeData', 'mode': 'ro'
+                }
+            }, cpu_period=100000, cpu_quota=100000, network_mode='none'
         )
         container_running_result = container.wait(timeout=timeLimit)
         time_interval = time.time() - container
@@ -67,5 +78,5 @@ def judgeCodeGen(taskDict: dict):
     :return: A tuple(int, str). tuple[0] indicating the result. 0/1 for Accepted/Wrong Answer.
     2 for Runtime Error. tuple[1] for message. 3 for Timeout
     """
-    # Here wait for Yunwei Ren's simulator
+    # Here wait for matching
     return '-1', 'Under development', -1, -1
