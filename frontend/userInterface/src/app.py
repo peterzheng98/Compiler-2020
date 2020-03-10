@@ -1,11 +1,10 @@
 from flask import Flask, render_template, Blueprint, redirect, flash
 
 from flask_bootstrap import Bootstrap
-from flask_nav import Nav
 from flask_nav.elements import *
 from flask_login import current_user, login_required, login_user, logout_user, LoginManager
 import requests as HTTPReq
-import subprocess
+import base64
 import json
 
 from forms import LoginForm, RegistrationForm
@@ -32,6 +31,14 @@ login_manager.login_view = '/'
 @login_manager.user_loader
 def load_user(stu_id):
     return fetchUserByID(stu_id)
+
+
+@app.route('/base64/detail/<string:raw_id_1>/<string:raw_id_2>')
+def base64_decode(raw_id_1, raw_id_2):
+    try:
+        return base64.b64decode((''.join(open('static/datalogs/{}_{}.txt'.format(raw_id_1, raw_id_2), 'r').readlines())).encode()).decode()
+    except Exception as ident:
+        return 'Error occurred.'
 
 
 @app.route('/')
@@ -99,7 +106,11 @@ def judge_detail(judgeid: str, judgepid: str):
             record_list = []
         else:
             for Idx, D in enumerate(r2.json()['message']):
-                sub_list = [(std_font_attr, '', Idx), (std_font_attr, '',
+                result = ''.join(D[2].split('/')[1:])
+                subWorkID = D[4].replace('_', '/')
+                aref = '/base64/detail/{}'.format(subWorkID)
+                open('static/datalogs/{}.txt'.format(D[4]), 'w').write(result)
+                sub_list = [(std_font_attr, aref, Idx), (std_font_attr, '',
                                                        '1-Semantic' if D[0] == '1' else '2-Codegen' if D[
                                                                                                            0] == '2' else '3-Optimize' if
                                                        D[0] == '3' else 'Unknown'), (std_font_attr, '', D[1])]

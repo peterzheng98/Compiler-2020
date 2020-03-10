@@ -60,7 +60,7 @@ func getJudgeResultDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	judgeId := judgeResult.Uuid
-	sqlCmd := fmt.Sprintf("SELECT judge_d_type, judge_d_testcase, judge_d_result, judge_d_judgeTime FROM JudgeDetail WHERE judge_p_judgeid='%s'", judgeId)
+	sqlCmd := fmt.Sprintf("SELECT judge_d_type, judge_d_testcase, judge_d_result, judge_d_judgeTime, judge_d_subworkId FROM JudgeDetail WHERE judge_p_judgeid='%s'", judgeId)
 	result, sqlerr := executionQuery(sqlCmd)
 	if sqlerr != nil {
 		logger(fmt.Sprintf("Runtime error: %s", sqlerr.Error()), 1)
@@ -77,8 +77,10 @@ func getJudgeResultDetail(w http.ResponseWriter, r *http.Request) {
 		var judgeCase string
 		var judgeResult string
 		var judgeTime string
-		result.Scan(&judgeType, &judgeCase, &judgeResult, &judgeTime)
-		sendElem := []string{judgeType, judgeCase, judgeResult, judgeTime}
+		var judgeWorkID string
+		fmt.Printf("\n\n[%s]\n\n", judgeResult)
+		result.Scan(&judgeType, &judgeCase, &judgeResult, &judgeTime, &judgeWorkID)
+		sendElem := []string{judgeType, judgeCase, judgeResult, judgeTime, judgeWorkID}
 		sentResult = append(sentResult, sendElem)
 	}
 	_ = json.NewEncoder(w).Encode(sendFormatList{
