@@ -23,14 +23,14 @@ def judgeSemantic(taskDict: dict):
         # Find the image and try to start the image
         start_time = time.time()
         path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
-        open(os.join(path_prefix, 'judgeSemantic.bash'), 'w').write(
-            'cat /judgeData/testdata.txt | bash /compiler/semantic.sh')
-        open(os.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
+        open(os.path.join(path_prefix, 'judgeSemantic.bash'), 'w').write(
+            'cat /judgeData/testdata.txt | bash /compiler/semantic.bash')
+        open(os.path.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
         container = C.containers.run(
             image=imageName,
             command='bash /judgeData/judgeSemantic.bash',
             detach=True, stdout=True, stderr=True,
-            mem_limit=memoryLimit, auto_remove=True,
+            mem_limit='{}m'.format(memoryLimit),
             volumes={
                 os.path.join(Config_Dict['compilerPath'], 'judgeData'): {
                     'bind': '/judgeData', 'mode': 'ro'
@@ -38,20 +38,22 @@ def judgeSemantic(taskDict: dict):
             }, cpu_period=100000, cpu_quota=100000, network_mode='none'
         )
         container_running_result = container.wait(timeout=timeLimit)
-        time_interval = time.time() - container
+        time_interval = time.time() - start_time
         containerExitCode, stdout, stderr = container_running_result['StatusCode'], \
-                                            container.log(stdout=True, stderr=False), \
-                                            container.log(stdout=False, stderr=True)
+                                            container.logs(stdout=True, stderr=False), \
+                                            container.logs(stdout=False, stderr=True)
+        assertion = True if assertion == 0 else False
         if assertion == (containerExitCode == 0):
             return '0', '==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
-                stdout[0:Config_Dict['MaxlogSize']],
-                stderr[0:Config_Dict['MaxlogSize']]), time_interval
+                stdout[0:Config_Dict['MaxlogSize']].decode(),
+                stderr[0:Config_Dict['MaxlogSize']].decode()), time_interval
         else:
             return '1', '==Verdict==\nWrong Answer\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode,
-                stdout[0:Config_Dict['MaxlogSize']],
-                stderr[0:Config_Dict['MaxlogSize']]), time_interval
+                stdout[0:Config_Dict['MaxlogSize']].decode(),
+                stderr[0:Config_Dict['MaxlogSize']].decode()), time_interval
+
     except docker.errors.ImageNotFound as identifier:
         return '2', 'Docker Image not found, {}'.format(identifier), -1
     except requests.exceptions.ReadTimeout as identifier:
@@ -65,8 +67,8 @@ def judgeSemantic(taskDict: dict):
             pass
         return '3', '==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
             containerExitCode,
-            stdout[0:Config_Dict['MaxlogSize']],
-            stderr[0:Config_Dict['MaxlogSize']]), timeLimit
+            stdout[0:Config_Dict['MaxlogSize']].decode(),
+            stderr[0:Config_Dict['MaxlogSize']].decode()), timeLimit
     except Exception as identifier:
         return '2', 'Unknown error occurred, {}'.format(identifier), timeLimit
 
