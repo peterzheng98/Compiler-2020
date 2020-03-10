@@ -24,7 +24,7 @@ def judgeSemantic(taskDict: dict):
         start_time = time.time()
         path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
         open(os.path.join(path_prefix, 'judgeSemantic.bash'), 'w').write(
-            'cat /judgeData/testdata.txt | bash /compiler/semantic.bash')
+            'cat /judgeData/testdata.txt | bash /compiler/semantic.sh')
         open(os.path.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
         container = C.containers.run(
             image=imageName,
