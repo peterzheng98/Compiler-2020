@@ -42,17 +42,19 @@ def judgeSemantic(taskDict: dict):
         containerExitCode, stdout, stderr = container_running_result['StatusCode'], \
                                             container.logs(stdout=True, stderr=False), \
                                             container.logs(stdout=False, stderr=True)
-        assertion = True if assertion == 0 else False
+        assertion = True if assertion == '0' else False
         if assertion == (containerExitCode == 0):
-            return '0', '==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
-                containerExitCode,
-                base64.b64encode(stdout[0:Config_Dict['MaxlogSize']]).decode(),
-                base64.b64encode(stderr[0:Config_Dict['MaxlogSize']]).decode()), time_interval
+            return_mess = ('==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+                containerExitCode, stdout[0:Config_Dict['MaxlogSize']].decode(),
+                stderr[0:Config_Dict['MaxlogSize']].decode()
+            )).encode()
+            return '0', base64.b64encode(return_mess).decode(), time_interval
         else:
-            return '1', '==Verdict==\nWrong Answer\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
-                containerExitCode,
-                base64.b64encode(stdout[0:Config_Dict['MaxlogSize']]).decode(),
-                base64.b64encode(stderr[0:Config_Dict['MaxlogSize']]).decode()), time_interval
+            return_mess = ('==Verdict==\nWrong Answer\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+                containerExitCode, stdout[0:Config_Dict['MaxlogSize']].decode(),
+                stderr[0:Config_Dict['MaxlogSize']].decode()
+            )).encode()
+            return '1', base64.b64encode(return_mess).decode(), time_interval
 
     except docker.errors.ImageNotFound as identifier:
         return '2', 'Docker Image not found, {}'.format(identifier), -1
@@ -65,10 +67,11 @@ def judgeSemantic(taskDict: dict):
             container.kill()
         except Exception as identifier:
             pass
-        return '3', '==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
-            containerExitCode,
-            base64.b64encode(stdout[0:Config_Dict['MaxlogSize']]).decode(),
-            base64.b64encode(stderr[0:Config_Dict['MaxlogSize']]).decode()), timeLimit
+        return_mess = ('==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+            containerExitCode, stdout[0:Config_Dict['MaxlogSize']].decode(),
+            stderr[0:Config_Dict['MaxlogSize']].decode()
+        )).encode()
+        return '3', base64.b64encode(return_mess).decode(), timeLimit
     except Exception as identifier:
         return '2', 'Unknown error occurred, {}'.format(identifier), timeLimit
 
@@ -81,4 +84,4 @@ def judgeCodeGen(taskDict: dict):
     2 for Runtime Error. tuple[1] for message. 3 for Timeout
     """
     # Here wait for matching
-    return '-1', 'Under development', -1, -1
+    return '2', 'Under development', -1, -1
