@@ -111,8 +111,7 @@ def judge_detail(judgeid: str, judgepid: str):
                 aref = '/base64/detail/{}'.format(subWorkID)
                 open('static/datalogs/{}.txt'.format(D[4]), 'w').write(result)
                 sub_list = [(std_font_attr, aref, Idx), (std_font_attr, '',
-                                                       '1-Semantic' if D[0] == '1' else '2-Codegen' if D[
-                                                                                                           0] == '2' else '3-Optimize' if
+                                                       '1-Semantic' if D[0] == '1' else '2-Codegen' if D[0] == '2' else '3-Optimize' if
                                                        D[0] == '3' else 'Unknown'), (std_font_attr, '', D[1])]
                 if D[2][0] == '0':
                     sub_list.append((passed_attr, '', 'passed'))

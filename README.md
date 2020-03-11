@@ -10,7 +10,7 @@
 
 补充5：（重要）为了减少repo的大小，请参考本页面底部的FAQ-2调用docker内部已有的库，需要的库请联系TA，放入Docker，DDL：3月16日 22：00。
 
-信息：最新测试集合GitHash `fda9271809e61290cfeb35e80b85aee6d75f416b` 最后更新：2020年2月26日
+信息：最新测试集合GitHash `2de6ba373eee38f596186e98d49ab4808eecb379` 最后更新：2020年3月11日
 
 
 - [Compiler 2020 Manual](#compiler-2020-manual)
