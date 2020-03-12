@@ -1,16 +1,8 @@
 from ConfigDeploy import Config_Dict
-from initalSet import initDatabase
-from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
 from dockerTools import existImage, cleanDocker, makeContainer, C
-from judgeTools import judgeSemantic, judgeCodeGen
 from gitTools import updateRepo, getGitHash, fetchGitCommit
-import sys
-import docker
-import requests
-import json
-import time
+import base64
 import os
-import shutil
 import time
 import subprocess
 
@@ -55,11 +47,13 @@ def build_compiler(config_dict: dict):
             git_build_stderr = 'Git Timeout'
             genLog('[coreModule.py] Git Timeout')
             process.terminate()
-            return 'Fail', 'N/A', 'N/A', git_build_stderr, ''
+            return 'Fail', 'N/A', base64.b64encode('N/A'.encode()).decode(), base64.b64encode(
+                git_build_stderr.encode()).decode(), ''
         except Exception as identifier:
             git_build_stderr = 'GitRuntime Error: {}'.format(identifier)
             genLog('[coreModule.py] {}'.format(git_build_stderr))
-            return 'Fail', 'N/A', 'N/A', git_build_stderr, ''
+            return 'Fail', 'N/A', base64.b64encode('N/A'.encode()).decode(), base64.b64encode(
+                git_build_stderr.encode()).decode(), ''
     # Check the hash value
     # 1. get local hash
     hashResultLocal = getGitHash(userCompilerPath)
@@ -85,12 +79,12 @@ def build_compiler(config_dict: dict):
             _t = subprocess.Popen(['mkdir', 'temp'],
                                   cwd=Config_Dict['compilerPath'])
             _t.wait(10)
-            _t = subprocess.Popen(['cp', '-r',  userCompilerPath, '/*', 'temp/'], cwd=Config_Dict['compilerPath'])
+            _t = subprocess.Popen(['cp', '-r', userCompilerPath, '/*', 'temp/'], cwd=Config_Dict['compilerPath'])
             _t.wait(10)
             with open(Config_Dict['compilerPath'] + '/temp/Dockerfile', 'w') as f:
                 f.write(
                     'FROM %s\nADD * /compiler/\nWORKDIR /compiler\nRUN bash /compiler/build.sh' % (
-                        Config_Dict['dockerprefix'] + 'base'))
+                            Config_Dict['dockerprefix'] + 'base'))
             dockerProcess = subprocess.Popen(['docker', 'build', '-t', imageName, '.'],
                                              cwd=os.path.join(Config_Dict['compilerPath'], 'temp'),
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -101,7 +95,8 @@ def build_compiler(config_dict: dict):
             stdout_str = ''.join([i.decode() for i in stdout_str[:20]])
             stderr_str = dockerProcess.stderr.readlines()
             stderr_str = ''.join([i.decode() for i in stderr_str[:20]])
-            build_result = '==git stdout==\n{}\n==git stderr==\n{}\n==stdout==\n{}\n==stderr==\n{}'.format(git_build_stdout, git_build_stderr, stdout_str, stderr_str)
+            build_result = '==git stdout==\n{}\n==git stderr==\n{}\n==stdout==\n{}\n==stderr==\n{}'.format(
+                git_build_stdout, git_build_stderr, stdout_str, stderr_str)
         except subprocess.TimeoutExpired:
             build_verdict = 'Timeout'
             build_result = 'Build timeout'
@@ -113,13 +108,15 @@ def build_compiler(config_dict: dict):
             build_result = 'Build Runtime Error, {}'.format(identifier)
             genLog(
                 '(Judge-Build)  Built Runtime Error occurred. %s / target:%s -> %s' % (
-                identifier,config_dict['uuid'], config_dict['ident']))
+                    identifier, config_dict['uuid'], config_dict['ident']))
         _t = subprocess.Popen(['rm', '-rf', 'temp'], cwd=Config_Dict['compilerPath'])
         genLog('(Judge-Build)  built finished. target:%s' % config_dict)
         gitCommitLog = fetchGitCommit(userCompilerPath, hashResultRemote[1])
-        return build_verdict, hashResultRemote[1], gitCommitLog, build_result, imageName
+        return build_verdict, hashResultRemote[1], base64.b64encode(gitCommitLog.encode()).decode(), base64.b64encode(
+            build_result.encode()).decode(), imageName
     else:
         # matched and exist
         # verdict, GitHash, GitCommit, BuildMessage
         log = fetchGitCommit(userCompilerPath, hashResultRemote[1])
-        return 'Success', hashResultRemote[1], log, 'Recently built.', imageName
+        return 'Success', hashResultRemote[1], base64.b64encode(log.encode()).decode(), base64.b64encode(
+            'Recently built.'.encode()).decode(), imageName
