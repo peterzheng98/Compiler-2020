@@ -18,6 +18,7 @@ var optimizePool []JudgePoolElement
 var compilePool = make(map[string]JudgePoolElement)
 var db, _ = sql.Open("mysql", "client:password1A@tcp(127.0.0.1:3306)/compiler")
 var db2, _ = sql.Open("mysql", "client:password1A@tcp(127.0.0.1:3306)/compiler")
+var secretKey = "1234567890"
 
 func main() {
 	db, err := sql.Open("mysql", "client:password1A@tcp(127.0.0.1:3306)/compiler")
@@ -56,6 +57,7 @@ func main() {
 	http.HandleFunc("/getStatusBrief", getJudgeResult)
 	http.HandleFunc("/getStatusDetail", getJudgeResultDetail)
 	http.HandleFunc("/fetchServerStatus", fetchServerStatus)
+	http.HandleFunc("/modifyServer", modifyServer)
 	fmt.Print("Start to serve\n")
 	http.ListenAndServe(":43010", nil)
 }
