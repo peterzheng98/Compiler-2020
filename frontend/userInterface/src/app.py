@@ -106,7 +106,7 @@ def judge_detail(judgeid: str, judgepid: str):
             record_list = []
         else:
             for Idx, D in enumerate(r2.json()['message']):
-                result = ''.join(D[2].split('/')[1:])
+                result = '/'.join(D[2].split('/')[1:])
                 subWorkID = D[4].replace('_', '/')
                 aref = '/base64/detail/{}'.format(subWorkID)
                 open('static/datalogs/{}.txt'.format(D[4]), 'w').write(result)
@@ -139,12 +139,12 @@ def judge_detail(judgeid: str, judgepid: str):
         return render_template('judge_detail.html',
                                webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
                                content_title='Details for Record #{}'.format(judgeid),
-                               commit_message=r.json()['message']['gitMessage'],
+                               commit_message=base64.b64decode(r.json()['message']['gitMessage']),
                                header_list=['#', 'Phase', 'Test case', 'Verdict', 'Compiling', 'Execution Cycles',
                                             'Judge Time'],
                                record_list=record_list,
                                judge_list=judge_list,
-                               prev_page=0, builtMessage=r.json()['message']['buildMessage'].replace('\\n', '\n'))
+                               prev_page=0, builtMessage=base64.b64decode(r.json()['message']['buildMessage']).replace('\\n', '\n'))
     except Exception as identifier:
         return render_template('judge_detail.html',
                                webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},

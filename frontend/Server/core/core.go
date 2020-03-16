@@ -55,6 +55,7 @@ func main() {
 	http.HandleFunc("/submitBuild", submitBuildTask)
 	http.HandleFunc("/getStatusBrief", getJudgeResult)
 	http.HandleFunc("/getStatusDetail", getJudgeResultDetail)
+	http.HandleFunc("/fetchServerStatus", fetchServerStatus)
 	fmt.Print("Start to serve\n")
 	http.ListenAndServe(":43010", nil)
 }

@@ -42,7 +42,7 @@ def judgeSemantic(taskDict: dict):
         containerExitCode, stdout, stderr = container_running_result['StatusCode'], \
                                             container.logs(stdout=True, stderr=False), \
                                             container.logs(stdout=False, stderr=True)
-        assertion = True if assertion == '0' else False
+        assertion = True if assertion == '1' else False
         if assertion == (containerExitCode == 0):
             return_mess = ('==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
                 containerExitCode, stdout[0:Config_Dict['MaxlogSize']].decode(),

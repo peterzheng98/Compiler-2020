@@ -1,19 +1,21 @@
 import json
 import requests
-import sys
 import os
+import base64
 from tqdm import tqdm
 
 
 if __name__ == '__main__':
     file_list_path = '/Users/peterzheng/Documents/Projects/OldProject/Compiler/Compiler 2020/testcase/sema/judgelist.txt'
     static_folder = '/Users/peterzheng/Documents/Projects/OldProject/Compiler/Compiler 2020/frontend/userInterface/src/static/testsets/'
-    request_addr = 'http://127.0.0.1:10430/addDataSemantic'
+    request_addr = 'http://127.0.0.1:43010/addDataSemantic'
     files_all = open(file_list_path, 'r').readlines()
     files_all = [i.strip('\n') for i in files_all]
     # for semantic
     bar = tqdm(desc='Progress', total=len(files_all))
     for file in files_all:
+        if 'basic-11' in file:
+            print('111')
         if '/' in file:
             real_file = file.split('/')[-1]
         else:
@@ -26,6 +28,7 @@ if __name__ == '__main__':
         metaDict = {i[0]: i[1] for i in metaArea}
         expectedResult = metaDict['Verdict'] == 'Success'
         dataArea = '\n'.join(caseData[metaIdx[1] + 1:])
+        dataArea = base64.b64encode(dataArea.encode()).decode()
         send_package = {
             'source_code': dataArea,
             'assertion': True if expectedResult else False,

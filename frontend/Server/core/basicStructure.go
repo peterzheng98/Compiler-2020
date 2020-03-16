@@ -85,7 +85,7 @@ type subtaskCodegenFormat struct {
 type requestCodegenTaskFormat struct {
 	Code   int                    `json:"code"`
 	Target []subtaskCodegenFormat `json:"target"`
-	WorkID string                  `json:"workid"`
+	WorkID string                 `json:"workid"`
 }
 
 type requestSemanticTaskFormat struct {
@@ -112,17 +112,17 @@ type submitTaskElement struct {
 }
 
 type JudgePoolElement struct {
-	uuid       string
-	repo       string
-	githash    string
-	recordID   string
-	build      bool
-	success    []string
-	fail       []string
-	pending    []string
-	running    []string
-	runningSet map[string]bool
-	total      int
+	uuid       string          `json:"uuid"`
+	repo       string          `json:"repo"`
+	githash    string          `json:"githash"`
+	recordID   string          `json:"record_id"`
+	build      bool            `json:"build"`
+	success    []string        `json:"success"`
+	fail       []string        `json:"fail"`
+	pending    []string        `json:"pending"`
+	running    []string        `json:"running"`
+	runningSet map[string]bool `json:"running_set"`
+	total      int             `json:"total"`
 }
 
 type submitBuiltTaskElement struct {

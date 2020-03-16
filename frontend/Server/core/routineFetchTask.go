@@ -47,7 +47,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			sqlCmd := fmt.Sprintf("SELECT sema_uid, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE %s", "sema_uid='"+strings.Join(runningList, "' OR sema_uid='")+"'")
+			sqlCmd := fmt.Sprintf("SELECT sema_testcase, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE %s", "sema_uid='"+strings.Join(runningList, "' OR sema_uid='")+"'")
 			result, err := executionQuery(sqlCmd)
 			if err != nil {
 				logger(fmt.Sprintf("Runtime error: %s", err.Error()), 1)
