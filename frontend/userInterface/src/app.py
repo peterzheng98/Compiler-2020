@@ -39,10 +39,11 @@ def load_user(stu_id):
 def base64_decode(raw_id_1, raw_id_2):
     std_str = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css"><style>.code-font-medium {font-family: \'Fira Code\', monospace;font-size: medium;}</style></head>'
     try:
-        return '{}<body class="code-font-medium">{}</body></html>'.format(std_str, base64.b64decode((''.join(open('static/datalogs/{}_{}.txt'.format(raw_id_1, raw_id_2), 'r').readlines())).encode()).decode().replace('\n', '<br>').replace(' ', '&nbsp;'))
+        return '{}<body class="code-font-medium">{}</body></html>'.format(std_str, base64.b64decode((''.join(
+            open('static/datalogs/{}_{}.txt'.format(raw_id_1, raw_id_2), 'r').readlines())).encode()).decode().replace(
+            '\n', '<br>').replace(' ', '&nbsp;'))
     except Exception as ident:
         return 'Error occurred. {}'.format(ident)
-
 
 
 @app.route('/')
@@ -117,7 +118,7 @@ def judge_detail(judgeid: str, judgepid: str):
                 sub_list = [
                     (std_font_attr, aref, Idx),
                     (std_font_attr, '', '1-Semantic' if D[0] == '1' else '2-Codegen' if D[0] == '2' else '3-Optimize' if
-                                                         D[0] == '3' else 'Unknown'),
+                    D[0] == '3' else 'Unknown'),
                     (std_font_attr, '', D[1])
                 ]
                 if D[2][0] == '0':
@@ -146,13 +147,14 @@ def judge_detail(judgeid: str, judgepid: str):
         return render_template('judge_detail.html',
                                webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
                                content_title='Details for Record #{}'.format(judgeid),
-                               commit_message=base64.b64decode(r.json()['message']['gitMessage']),
+                               commit_message=base64.b64decode(r.json()['message']['gitMessage'].encode()).decode(),
                                header_list=['#', 'Phase', 'Test case', 'Verdict', 'Compiling', 'Execution Cycles',
                                             'Judge Time'],
                                record_list=record_list,
                                judge_list=judge_list,
                                prev_page=0,
-                               builtMessage=base64.b64decode(r.json()['message']['buildMessage']).replace('\\n', '\n'))
+                               builtMessage=base64.b64decode(
+                                   r.json()['message']['buildMessage'].encode()).decode().replace('\\n', '\n'))
     except Exception as identifier:
         return render_template('judge_detail.html',
                                webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
@@ -186,7 +188,7 @@ def show_server_status_compile():
         cnt = 0
         d = json.loads(r.json()['message']['compile'])
         for k, v in d.items():
-            cell_content = '<td>{}</td>'
+            cell_content = '<td>&nbsp;&nbsp;{}&nbsp;&nbsp;</td>'
             cell_list = [
                 '<tr>',
                 cell_content.format(cnt),
@@ -198,6 +200,41 @@ def show_server_status_compile():
             ]
             table_cell.append(''.join(cell_list))
             cnt = cnt + 1
+        return html_code + body_code.format(table_header.format(table_content.format(''.join(table_cell))))
+    except Exception as ident:
+        body_code = body_code.format('Currently Unavailable. {}'.format(ident))
+        return html_code + body_code
+
+
+@app.route('/status/semantic')
+@login_required
+def show_server_status_semantic():
+    html_code = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css"><style>.code-font-medium {font-family: \'Fira Code\', monospace;font-size: small;}</style></head>'
+    body_code = '<body class="code-font-medium"><h2>Semantic Queue</h2><h3>Person View</h3>{}</body></html>'
+    try:
+        r = HTTPReq.get(path.fetchServerStatus, timeout=2)
+        if 'error-compile' in r.json()['message'].keys():
+            body_code = body_code.format('Currently Unavailable')
+            return html_code + body_code
+        table_header = '<table><thead><th>#</th> <th>ID</th> <th>Repo</th> <th>GitHash</th> <th>Status</th> </thead>{}</table>'
+        table_content = '<tbody>{}</tbody>'
+        table_cell = []
+        d_list = json.loads(r.json()['message']['semantic'])
+        for cnt, d in enumerate(d_list):
+            cell_content = '<td>&nbsp;&nbsp;{}&nbsp;&nbsp;</td>'
+            pass_list = [i.split('_')[0] for i in d['success']]
+            fail_list = [i.split('_')[0] for i in d['fail']]
+            cell_list = [
+                '<tr>',
+                cell_content.format(cnt),
+                cell_content.format(d['uuid'][1:]),
+                cell_content.format(d['repo']),
+                cell_content.format(d['githash']),
+                cell_content.format('Passed: {} / Failed: {} / Remaining: {}'.format(len(pass_list), len(fail_list), len(d['pending']))),
+                '</tr>'
+            ]
+            table_cell.append(''.join(cell_list))
+
         return html_code + body_code.format(table_header.format(table_content.format(''.join(table_cell))))
     except Exception as ident:
         body_code = body_code.format('Currently Unavailable. {}'.format(ident))

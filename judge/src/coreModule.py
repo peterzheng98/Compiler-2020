@@ -20,7 +20,7 @@ def build_compiler_local(config_dict: dict):
     assert 'repo' in config_dict.keys()
     userCompilerPath = Config_Dict['compilerPath'] + '/' + config_dict['uuid']
     hashResultLocal = getGitHash(userCompilerPath)
-    imageName = Config_Dict['dockerprefix'] + config_dict['uuid'] + '_' + hashResultLocal[1][0:8]
+    imageName = Config_Dict['dockerprefix'] + config_dict['uuid'] + ':' + hashResultLocal[1][0:8]
     log = fetchGitCommit(userCompilerPath, hashResultLocal[1])
     return 'Success', hashResultLocal[1], log, 'Recently built.', imageName
 
@@ -69,7 +69,7 @@ def build_compiler(config_dict: dict):
     # Matched -> check whether the image exists
     # Not matched -> build images
     # dockerimage:uuid + hash[0:8]
-    imageName = Config_Dict['dockerprefix'] + config_dict['uuid'] + '_' + hashResultRemote[1][0:8]
+    imageName = Config_Dict['dockerprefix'] + config_dict['uuid'] + ':' + hashResultRemote[1][0:8]
     if (not hashMatched) or (not existImage(imageName)):
         build_result = 'Not Available'
         build_verdict = 'Fail'

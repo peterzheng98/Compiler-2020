@@ -9,7 +9,7 @@ import (
 
 // /fetchTask
 func getTask(w http.ResponseWriter, r *http.Request) {
-	if len(semanticPool) == 0 && len(codegenPool) == 0 && len(optimizePool) == 0{
+	if len(semanticPool) == 0 && len(codegenPool) == 0 && len(optimizePool) == 0 {
 		_ = json.NewEncoder(w).Encode(simpleSendFormat{
 			Code:    404,
 			Message: "No available work currently",
@@ -47,7 +47,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			sqlCmd := fmt.Sprintf("SELECT sema_testcase, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE %s", "sema_uid='"+strings.Join(runningList, "' OR sema_uid='")+"'")
+			sqlCmd := fmt.Sprintf("SELECT sema_uid, sema_testcase, sema_sourceCode, sema_assertion, sema_timeLimit, sema_memoryLimit FROM dataset_semantic WHERE %s", "sema_uid='"+strings.Join(runningList, "' OR sema_uid='")+"'")
 			result, err := executionQuery(sqlCmd)
 			if err != nil {
 				logger(fmt.Sprintf("Runtime error: %s", err.Error()), 1)
@@ -63,18 +63,19 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 			sentReq.WorkID = poolElement.RecordID
 			for result.Next() {
 				var id string
+				var testcase string
 				var sourceCode string
 				var assert string
 				var timeLimit float32
 				var memoryLimit int
-				err = result.Scan(&id, &sourceCode, &assert, &timeLimit, &memoryLimit)
+				err = result.Scan(&id, &testcase, &sourceCode, &assert, &timeLimit, &memoryLimit)
 				if err != nil {
 					logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 1)
 				}
 				sentReq.Target = append(sentReq.Target, subtaskSemanticFormat{
 					Uuid:            poolElement.Uuid,
 					Repo:            poolElement.Repo,
-					TestCase:        id,
+					TestCase:        testcase,
 					Stage:           1,
 					Subworkid:       id + "_" + n.Next(),
 					InputSourceCode: sourceCode,
@@ -82,6 +83,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 					TimeLimit:       timeLimit,
 					MemoryLimit:     memoryLimit,
 					TaskID:          poolElement.RecordID,
+					TestCaseID:      id,
 				})
 			}
 
@@ -117,7 +119,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				codegenPool[idx].Pending = append(codegenPool[idx].Pending[5:])
 			}
 			_ = copy(runningList, codegenPool[idx].Running)
-			cmd := "SELECT cg_uid, cg_sourceCode, cg_assertion, cg_timeLimit, cg_memoryLimit, cg_inputCtx, cg_outputCtx, cg_outputCode FROM dataset_codegen WHERE " +
+			cmd := "SELECT cg_uid, cg_testcase, cg_sourceCode, cg_assertion, cg_timeLimit, cg_memoryLimit, cg_inputCtx, cg_outputCtx, cg_outputCode FROM dataset_codegen WHERE " +
 				"cg_uid='" + strings.Join(runningList, "' OR cg_uid='") + "'"
 			fmt.Printf("Execution Sentence:%s\n", cmd)
 			result, err := executionQuery(cmd)
@@ -138,14 +140,15 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				var inputContext string
 				var outputContext string
 				var outputCode int
-				err = result.Scan(&id, &sourceCode, &assert, &timeLimit, &memoryLimit, &inputContext, &outputContext, &outputCode)
+				var testcase string
+				err = result.Scan(&id, &testcase, &sourceCode, &assert, &timeLimit, &memoryLimit, &inputContext, &outputContext, &outputCode)
 				if err != nil {
 					fmt.Printf("runtime warning:%s when scanning the codegen database", err.Error())
 				}
 				sentReq.Target = append(sentReq.Target, subtaskCodegenFormat{
 					Uuid:            poolElement.Uuid,
 					Repo:            poolElement.Repo,
-					TestCase:        id,
+					TestCase:        testcase,
 					Stage:           2,
 					Subworkid:       id + "_" + n.Next(),
 					InputSourceCode: sourceCode,
@@ -155,6 +158,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 					TimeLimit:       timeLimit,
 					MemoryLimit:     memoryLimit,
 					TaskID:          poolElement.RecordID,
+					TestCaseID:      id,
 				})
 			}
 
@@ -190,7 +194,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				optimizePool[idx].Pending = append(optimizePool[idx].Pending[5:])
 			}
 			_ = copy(runningList, optimizePool[idx].Running)
-			cmd := "SELECT optim_uid, optim_sourceCode, optim_assertion, optim_timeLimit, optim_memoryLimit, optim_inputCtx, optim_outputCtx, optim_outputCode FROM dataset_optimize WHERE " +
+			cmd := "SELECT optim_uid, optim_testcase, optim_sourceCode, optim_assertion, optim_timeLimit, optim_memoryLimit, optim_inputCtx, optim_outputCtx, optim_outputCode FROM dataset_optimize WHERE " +
 				"optim_uid='" + strings.Join(runningList, "' OR optim_uid='") + "'"
 			fmt.Printf("Execution Sentence:%s\n", cmd)
 			result, err := executionQuery(cmd)
@@ -211,14 +215,15 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 				var inputContext string
 				var outputContext string
 				var outputCode int
-				err = result.Scan(&id, &sourceCode, &assert, &timeLimit, &memoryLimit, &inputContext, &outputContext, &outputCode)
+				var testcase string
+				err = result.Scan(&id, &testcase, &sourceCode, &assert, &timeLimit, &memoryLimit, &inputContext, &outputContext, &outputCode)
 				if err != nil {
 					fmt.Printf("runtime warning:%s when scanning the codegen database", err.Error())
 				}
 				sentReq.Target = append(sentReq.Target, subtaskCodegenFormat{
 					Uuid:            poolElement.Uuid,
 					Repo:            poolElement.Repo,
-					TestCase:        id,
+					TestCase:        testcase,
 					Stage:           3,
 					Subworkid:       id + "_" + n.Next(),
 					InputSourceCode: sourceCode,
@@ -228,6 +233,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 					TimeLimit:       timeLimit,
 					MemoryLimit:     memoryLimit,
 					TaskID:          poolElement.RecordID,
+					TestCaseID:      id,
 				})
 			}
 

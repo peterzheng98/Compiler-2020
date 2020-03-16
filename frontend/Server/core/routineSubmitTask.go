@@ -24,7 +24,7 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 		if v.Judgetype == 1 {
 			// search in semantic
 			for idx, semanticV := range semanticPool {
-				if semanticV.Uuid == v.Uuid {
+				if semanticV.RecordID == v.TaskID {
 					semanticPool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "0" {
 						delete(semanticPool[idx].RunningSet, v.TestCase)
@@ -38,7 +38,7 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 		} else if v.Judgetype == 2 {
 			// search in codegen
 			for idx, semanticV := range codegenPool {
-				if semanticV.Uuid == v.Uuid {
+				if semanticV.RecordID == v.TaskID {
 					codegenPool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "0" {
 						codegenPool[idx].Success = append(codegenPool[idx].Success, v.SubworkId)
@@ -52,7 +52,7 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// search in optimize
 			for idx, semanticV := range optimizePool {
-				if semanticV.Uuid == v.Uuid {
+				if semanticV.RecordID == v.TaskID {
 					optimizePool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "1" {
 						optimizePool[idx].Success = append(optimizePool[idx].Success, v.SubworkId)

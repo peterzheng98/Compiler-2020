@@ -65,6 +65,7 @@ type subtaskSemanticFormat struct {
 	TimeLimit       float32 `json:"timeLimit"`
 	MemoryLimit     int     `json:"memoryLimit"`
 	TaskID          string  `json:"taskID"`
+	TestCaseID      string  `json:"test_case_id"`
 }
 
 type subtaskCodegenFormat struct {
@@ -80,6 +81,7 @@ type subtaskCodegenFormat struct {
 	TimeLimit       float32 `json:"timeLimit"`
 	MemoryLimit     int     `json:"memoryLimit"`
 	TaskID          string  `json:"taskID"`
+	TestCaseID      string  `json:"test_case_id"`
 }
 
 type requestCodegenTaskFormat struct {
