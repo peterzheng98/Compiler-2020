@@ -27,11 +27,11 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 				if semanticV.RecordID == v.TaskID {
 					semanticPool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "0" {
-						delete(semanticPool[idx].RunningSet, v.TestCase)
+						delete(semanticPool[idx].RunningSet, v.TestcaseID)
 						semanticPool[idx].Success = append(semanticPool[idx].Success, v.SubworkId)
 					} else {
 						semanticPool[idx].Fail = append(semanticPool[idx].Fail, v.SubworkId)
-						delete(semanticPool[idx].RunningSet, v.TestCase)
+						delete(semanticPool[idx].RunningSet, v.TestcaseID)
 					}
 				}
 			}
@@ -42,10 +42,10 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					codegenPool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "0" {
 						codegenPool[idx].Success = append(codegenPool[idx].Success, v.SubworkId)
-						delete(codegenPool[idx].RunningSet, v.TestCase)
+						delete(codegenPool[idx].RunningSet, v.TestcaseID)
 					} else {
 						codegenPool[idx].Fail = append(codegenPool[idx].Fail, v.SubworkId)
-						delete(codegenPool[idx].RunningSet, v.TestCase)
+						delete(codegenPool[idx].RunningSet, v.TestcaseID)
 					}
 				}
 			}
@@ -56,10 +56,10 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					optimizePool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "1" {
 						optimizePool[idx].Success = append(optimizePool[idx].Success, v.SubworkId)
-						delete(optimizePool[idx].RunningSet, v.TestCase)
+						delete(optimizePool[idx].RunningSet, v.TestcaseID)
 					} else {
 						optimizePool[idx].Fail = append(optimizePool[idx].Fail, v.SubworkId)
-						delete(optimizePool[idx].RunningSet, v.TestCase)
+						delete(optimizePool[idx].RunningSet, v.TestcaseID)
 					}
 				}
 			}
@@ -69,23 +69,23 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 	var RemoveIdx [][]int = make([][]int, 3)
 	var wrongIdx [][]int = make([][]int, 3)
 	for idx, v := range semanticPool {
-		if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
+		if len(v.RunningSet) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
 			RemoveIdx[0] = append(RemoveIdx[0], idx)
-		} else if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
+		} else if len(v.RunningSet) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
 			wrongIdx[0] = append(wrongIdx[0], idx)
 		}
 	}
 	for idx, v := range codegenPool {
-		if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
+		if len(v.RunningSet) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
 			RemoveIdx[1] = append(RemoveIdx[1], idx)
-		} else if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
+		} else if len(v.RunningSet) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
 			wrongIdx[1] = append(wrongIdx[1], idx)
 		}
 	}
 	for idx, v := range optimizePool {
-		if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
+		if len(v.RunningSet) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
 			RemoveIdx[2] = append(RemoveIdx[2], idx)
-		} else if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
+		} else if len(v.RunningSet) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
 			wrongIdx[2] = append(wrongIdx[2], idx)
 		}
 	}

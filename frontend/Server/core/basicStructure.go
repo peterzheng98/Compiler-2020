@@ -111,6 +111,7 @@ type submitTaskElement struct {
 	Uuid        string   `json:"uuid"`
 	GitHash     string   `json:"git_hash"`
 	TaskID      string   `json:"taskID"`
+	TestcaseID  string   `json:"test_case_id"`
 }
 
 type JudgePoolElement struct {
