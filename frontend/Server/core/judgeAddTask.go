@@ -4,14 +4,14 @@ import "fmt"
 
 func addOptimize(uuid string, repo string) {
 	element := JudgePoolElement{
-		uuid:    uuid,
-		repo:    repo,
-		success: make([]string, 0),
-		fail:    make([]string, 0),
-		pending: make([]string, 0),
-		running: make([]string, 0),
-		runningSet:make(map[string]bool),
-		total:   0,
+		Uuid:       uuid,
+		Repo:       repo,
+		Success:    make([]string, 0),
+		Fail:       make([]string, 0),
+		Pending:    make([]string, 0),
+		Running:    make([]string, 0),
+		RunningSet: make(map[string]bool),
+		Total:      0,
 	}
 	result, err := executionQuery("SELECT optim_uid FROM dataset_optimize")
 	if result == nil {
@@ -26,21 +26,21 @@ func addOptimize(uuid string, repo string) {
 		if err != nil {
 			fmt.Printf("runtime warning:%s when scanning the optimize database", err.Error())
 		}
-		element.pending = append(element.pending, id)
+		element.Pending = append(element.Pending, id)
 	}
 	optimizePool = append(optimizePool, element)
 }
 
 func addCodegen(uuid string, repo string) {
 	element := JudgePoolElement{
-		uuid:    uuid,
-		repo:    repo,
-		success: make([]string, 0),
-		fail:    make([]string, 0),
-		pending: make([]string, 0),
-		running: make([]string, 0),
-		runningSet:make(map[string]bool),
-		total:   0,
+		Uuid:       uuid,
+		Repo:       repo,
+		Success:    make([]string, 0),
+		Fail:       make([]string, 0),
+		Pending:    make([]string, 0),
+		Running:    make([]string, 0),
+		RunningSet: make(map[string]bool),
+		Total:      0,
 	}
 	result, err := executionQuery("SELECT cg_uid FROM dataset_codegen")
 	if result == nil {
@@ -55,7 +55,7 @@ func addCodegen(uuid string, repo string) {
 		if err != nil {
 			fmt.Printf("runtime warning:%s when scanning the codegen database", err.Error())
 		}
-		element.pending = append(element.pending, id)
+		element.Pending = append(element.Pending, id)
 	}
 	codegenPool = append(codegenPool, element)
 }

@@ -37,10 +37,10 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 	if dispatchedResult.Verdict == "Success" {
 		
 		var poolElement JudgePoolElement
-		poolElement.repo = dispatchedResult.Repo
-		poolElement.uuid = dispatchedResult.UUID
-		poolElement.build = true
-		poolElement.recordID = dispatchedResult.RecordID
+		poolElement.Repo = dispatchedResult.Repo
+		poolElement.Uuid = dispatchedResult.UUID
+		poolElement.Build = true
+		poolElement.RecordID = dispatchedResult.RecordID
 
 		// request for all the record in database
 		result, err := executionQuery("SELECT sema_uid FROM dataset_semantic")
@@ -61,14 +61,14 @@ func submitBuildTask(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer result.Close()
-		poolElement.runningSet = make(map[string]bool)
+		poolElement.RunningSet = make(map[string]bool)
 		for result.Next() {
 			var id string
 			err = result.Scan(&id)
 			if err != nil {
 				logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 1)
 			}
-			poolElement.pending = append(poolElement.pending, id)
+			poolElement.Pending = append(poolElement.Pending, id)
 
 		}
 		semanticPool = append(semanticPool, poolElement)

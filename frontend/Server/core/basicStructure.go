@@ -112,17 +112,17 @@ type submitTaskElement struct {
 }
 
 type JudgePoolElement struct {
-	uuid       string          `json:"uuid"`
-	repo       string          `json:"repo"`
-	githash    string          `json:"githash"`
-	recordID   string          `json:"record_id"`
-	build      bool            `json:"build"`
-	success    []string        `json:"success"`
-	fail       []string        `json:"fail"`
-	pending    []string        `json:"pending"`
-	running    []string        `json:"running"`
-	runningSet map[string]bool `json:"running_set"`
-	total      int             `json:"total"`
+	Uuid       string          `json:"uuid"`
+	Repo       string          `json:"repo"`
+	Githash    string          `json:"githash"`
+	RecordID   string          `json:"record_id"`
+	Build      bool            `json:"build"`
+	Success    []string        `json:"success"`
+	Fail       []string        `json:"fail"`
+	Pending    []string        `json:"pending"`
+	Running    []string        `json:"running"`
+	RunningSet map[string]bool `json:"running_set"`
+	Total      int             `json:"total"`
 }
 
 type submitBuiltTaskElement struct {

@@ -1,5 +1,5 @@
 class PathConfig:
-    basePath = 'http://127.0.0.1:10430/'
+    basePath = 'http://127.0.0.1:43010/'
     registerPath = basePath + 'addUser'
     requestJudgePath = basePath + 'requestJudge'
     getUserListPath = basePath + 'fetchRepoWeb'
@@ -9,3 +9,4 @@ class PathConfig:
     fetchStatusPath = basePath + 'fetchStatus'
     fetchStatusBrief = basePath + 'getStatusBrief'
     fetchJudgeResultDetail = basePath + 'getStatusDetail'
+    fetchServerStatus = basePath + 'fetchServerStatus'

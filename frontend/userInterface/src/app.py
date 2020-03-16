@@ -6,6 +6,8 @@ from flask_login import current_user, login_required, login_user, logout_user, L
 import requests as HTTPReq
 import base64
 import json
+import sys
+import time
 
 from forms import LoginForm, RegistrationForm
 from tools import validator, gitTools
@@ -35,10 +37,12 @@ def load_user(stu_id):
 
 @app.route('/base64/detail/<string:raw_id_1>/<string:raw_id_2>')
 def base64_decode(raw_id_1, raw_id_2):
+    std_str = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css"><style>.code-font-medium {font-family: \'Fira Code\', monospace;font-size: medium;}</style></head>'
     try:
-        return base64.b64decode((''.join(open('static/datalogs/{}_{}.txt'.format(raw_id_1, raw_id_2), 'r').readlines())).encode()).decode()
+        return '{}<body class="code-font-medium">{}</body></html>'.format(std_str, base64.b64decode((''.join(open('static/datalogs/{}_{}.txt'.format(raw_id_1, raw_id_2), 'r').readlines())).encode()).decode().replace('\n', '<br>').replace(' ', '&nbsp;'))
     except Exception as ident:
-        return 'Error occurred.'
+        return 'Error occurred. {}'.format(ident)
+
 
 
 @app.route('/')
@@ -91,7 +95,7 @@ def judge_detail(judgeid: str, judgepid: str):
                                    prev_page=0)
         judge_list = [None]
         judge_list[0] = ('0-Build', '1', 100.0) if 'Success' in r.json()['message']['buildResult'] else (
-        '0-Build', '0', 0.0)
+            '0-Build', '0', 0.0)
         passed_attr = 'btn btn-sm btn-success custom-xsmall-font custom-bold-font'
         failed_attr = 'btn btn-sm btn-danger custom-bold-font custom-xsmall-font'
         std_font_attr = 'custom-small-font'
@@ -110,9 +114,12 @@ def judge_detail(judgeid: str, judgepid: str):
                 subWorkID = D[4].replace('_', '/')
                 aref = '/base64/detail/{}'.format(subWorkID)
                 open('static/datalogs/{}.txt'.format(D[4]), 'w').write(result)
-                sub_list = [(std_font_attr, aref, Idx), (std_font_attr, '',
-                                                       '1-Semantic' if D[0] == '1' else '2-Codegen' if D[0] == '2' else '3-Optimize' if
-                                                       D[0] == '3' else 'Unknown'), (std_font_attr, '', D[1])]
+                sub_list = [
+                    (std_font_attr, aref, Idx),
+                    (std_font_attr, '', '1-Semantic' if D[0] == '1' else '2-Codegen' if D[0] == '2' else '3-Optimize' if
+                                                         D[0] == '3' else 'Unknown'),
+                    (std_font_attr, '', D[1])
+                ]
                 if D[2][0] == '0':
                     sub_list.append((passed_attr, '', 'passed'))
                 else:
@@ -144,7 +151,8 @@ def judge_detail(judgeid: str, judgepid: str):
                                             'Judge Time'],
                                record_list=record_list,
                                judge_list=judge_list,
-                               prev_page=0, builtMessage=base64.b64decode(r.json()['message']['buildMessage']).replace('\\n', '\n'))
+                               prev_page=0,
+                               builtMessage=base64.b64decode(r.json()['message']['buildMessage']).replace('\\n', '\n'))
     except Exception as identifier:
         return render_template('judge_detail.html',
                                webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
@@ -154,6 +162,46 @@ def judge_detail(judgeid: str, judgepid: str):
                                record_list=[],
                                judge_list=[],
                                prev_page=0)
+
+
+@app.route('/status')
+@login_required
+def show_server_status():
+    return render_template('server_status.html', webconfig={'title': 'Server Status - Compiler 2020'})
+
+
+@app.route('/status/compile')
+@login_required
+def show_server_status_compile():
+    html_code = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css"><style>.code-font-medium {font-family: \'Fira Code\', monospace;font-size: small;}</style></head>'
+    body_code = '<body class="code-font-medium"><h2>Build Queue</h2>{}</body></html>'
+    try:
+        r = HTTPReq.get(path.fetchServerStatus, timeout=2)
+        if 'error-compile' in r.json()['message'].keys():
+            body_code = body_code.format('Currently Unavailable')
+            return html_code + body_code
+        table_header = '<table><thead><th>#</th> <th>ID</th> <th>Repo</th> <th>GitHash</th> <th>Submit Time</th> </thead>{}</table>'
+        table_content = '<tbody>{}</tbody>'
+        table_cell = []
+        cnt = 0
+        d = json.loads(r.json()['message']['compile'])
+        for k, v in d.items():
+            cell_content = '<td>{}</td>'
+            cell_list = [
+                '<tr>',
+                cell_content.format(cnt),
+                cell_content.format(v['uuid'][1:]),
+                cell_content.format(v['repo']),
+                cell_content.format(v['githash']),
+                cell_content.format(str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(k))))),
+                '</tr>'
+            ]
+            table_cell.append(''.join(cell_list))
+            cnt = cnt + 1
+        return html_code + body_code.format(table_header.format(table_content.format(''.join(table_cell))))
+    except Exception as ident:
+        body_code = body_code.format('Currently Unavailable. {}'.format(ident))
+        return html_code + body_code
 
 
 @app.route('/judge/list/<string:page>')
@@ -298,4 +346,7 @@ def logout():
 
 
 if __name__ == '__main__':
-    app.run('127.0.0.1', 5000)
+    if sys.argv[1] == 'deploy':
+        app.run('0.0.0.0', 10567, debug=False)
+    else:
+        app.run('127.0.0.1', 5000)

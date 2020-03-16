@@ -24,42 +24,42 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 		if v.Judgetype == 1 {
 			// search in semantic
 			for idx, semanticV := range semanticPool {
-				if semanticV.uuid == v.Uuid {
-					semanticPool[idx].githash = v.GitHash
+				if semanticV.Uuid == v.Uuid {
+					semanticPool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "0" {
-						delete(semanticPool[idx].runningSet, v.TestCase)
-						semanticPool[idx].success = append(semanticPool[idx].success, v.SubworkId)
+						delete(semanticPool[idx].RunningSet, v.TestCase)
+						semanticPool[idx].Success = append(semanticPool[idx].Success, v.SubworkId)
 					} else {
-						semanticPool[idx].fail = append(semanticPool[idx].fail, v.SubworkId)
-						delete(semanticPool[idx].runningSet, v.TestCase)
+						semanticPool[idx].Fail = append(semanticPool[idx].Fail, v.SubworkId)
+						delete(semanticPool[idx].RunningSet, v.TestCase)
 					}
 				}
 			}
 		} else if v.Judgetype == 2 {
 			// search in codegen
 			for idx, semanticV := range codegenPool {
-				if semanticV.uuid == v.Uuid {
-					codegenPool[idx].githash = v.GitHash
+				if semanticV.Uuid == v.Uuid {
+					codegenPool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "0" {
-						codegenPool[idx].success = append(codegenPool[idx].success, v.SubworkId)
-						delete(codegenPool[idx].runningSet, v.TestCase)
+						codegenPool[idx].Success = append(codegenPool[idx].Success, v.SubworkId)
+						delete(codegenPool[idx].RunningSet, v.TestCase)
 					} else {
-						codegenPool[idx].fail = append(codegenPool[idx].fail, v.SubworkId)
-						delete(codegenPool[idx].runningSet, v.TestCase)
+						codegenPool[idx].Fail = append(codegenPool[idx].Fail, v.SubworkId)
+						delete(codegenPool[idx].RunningSet, v.TestCase)
 					}
 				}
 			}
 		} else {
 			// search in optimize
 			for idx, semanticV := range optimizePool {
-				if semanticV.uuid == v.Uuid {
-					optimizePool[idx].githash = v.GitHash
+				if semanticV.Uuid == v.Uuid {
+					optimizePool[idx].Githash = v.GitHash
 					if v.JudgeResult[0] == "1" {
-						optimizePool[idx].success = append(optimizePool[idx].success, v.SubworkId)
-						delete(optimizePool[idx].runningSet, v.TestCase)
+						optimizePool[idx].Success = append(optimizePool[idx].Success, v.SubworkId)
+						delete(optimizePool[idx].RunningSet, v.TestCase)
 					} else {
-						optimizePool[idx].fail = append(optimizePool[idx].fail, v.SubworkId)
-						delete(optimizePool[idx].runningSet, v.TestCase)
+						optimizePool[idx].Fail = append(optimizePool[idx].Fail, v.SubworkId)
+						delete(optimizePool[idx].RunningSet, v.TestCase)
 					}
 				}
 			}
@@ -69,23 +69,23 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 	var RemoveIdx [][]int = make([][]int, 3)
 	var wrongIdx [][]int = make([][]int, 3)
 	for idx, v := range semanticPool {
-		if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) == 0 {
+		if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
 			RemoveIdx[0] = append(RemoveIdx[0], idx)
-		} else if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) != 0 {
+		} else if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
 			wrongIdx[0] = append(wrongIdx[0], idx)
 		}
 	}
 	for idx, v := range codegenPool {
-		if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) == 0 {
+		if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
 			RemoveIdx[1] = append(RemoveIdx[1], idx)
-		} else if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) != 0 {
+		} else if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
 			wrongIdx[1] = append(wrongIdx[1], idx)
 		}
 	}
 	for idx, v := range optimizePool {
-		if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) == 0 {
+		if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) == 0 {
 			RemoveIdx[2] = append(RemoveIdx[2], idx)
-		} else if len(v.running) == 0 && len(v.pending) == 0 && len(v.fail) != 0 {
+		} else if len(v.Running) == 0 && len(v.Pending) == 0 && len(v.Fail) != 0 {
 			wrongIdx[2] = append(wrongIdx[2], idx)
 		}
 	}
@@ -94,50 +94,50 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 		for _, v2 := range v {
 			if k == 0 {
 				sliceElement := semanticPool[v2]
-				logger(fmt.Sprintf("Semantic Judge Finish: %s - %s Semantic accepted.",sliceElement.uuid, sliceElement.githash), 1)
-				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_semantic='%s' WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.success, "/")+"]", sliceElement.uuid, sliceElement.githash, sliceElement.repo, sliceElement.recordID)
+				logger(fmt.Sprintf("Semantic Judge Finish: %s - %s Semantic accepted.",sliceElement.Uuid, sliceElement.Githash), 1)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_semantic='%s' WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.Success, "/")+"]", sliceElement.Uuid, sliceElement.Githash, sliceElement.Repo, sliceElement.RecordID)
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
-				addCodegen(sliceElement.uuid, sliceElement.repo)
+				addCodegen(sliceElement.Uuid, sliceElement.Repo)
 				semanticPool = append(semanticPool[0:v2], semanticPool[v2+1:]...)
 			}
 			if k == 1 {
 				sliceElement := codegenPool[v2]
-				logger(fmt.Sprintf("Codegen Judge Finish: %s - %s Codegen accepted.",sliceElement.uuid, sliceElement.githash), 1)
-				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_codegen='%s' WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.success, "/")+"]", sliceElement.uuid, sliceElement.githash, sliceElement.repo, sliceElement.recordID)
+				logger(fmt.Sprintf("Codegen Judge Finish: %s - %s Codegen accepted.",sliceElement.Uuid, sliceElement.Githash), 1)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_codegen='%s' WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.Success, "/")+"]", sliceElement.Uuid, sliceElement.Githash, sliceElement.Repo, sliceElement.RecordID)
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Codegen]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
-				addOptimize(sliceElement.uuid, sliceElement.repo)
+				addOptimize(sliceElement.Uuid, sliceElement.Repo)
 				codegenPool = append(codegenPool[0:v2], codegenPool[v2+1:]...)
 			}
 			if k == 2 {
 				sliceElement := optimizePool[v2]
-				logger(fmt.Sprintf("Optimize Judge Finish: %s - %s Optimize accepted.",sliceElement.uuid, sliceElement.githash), 1)
-				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_optimize ='%s', judge_p_verdict=1 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.success, "/")+"]", sliceElement.uuid, sliceElement.githash, sliceElement.repo, sliceElement.recordID)
+				logger(fmt.Sprintf("Optimize Judge Finish: %s - %s Optimize accepted.",sliceElement.Uuid, sliceElement.Githash), 1)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_optimize ='%s', judge_p_verdict=1 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.Success, "/")+"]", sliceElement.Uuid, sliceElement.Githash, sliceElement.Repo, sliceElement.RecordID)
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Optimize]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=7 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=7 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
@@ -152,14 +152,14 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 		for _, v2 := range v {
 			if k == 0 {
 				sliceElement := semanticPool[v2]
-				logger(fmt.Sprintf("Semantic Judge Finish: %s - %s Semantic failed.",sliceElement.uuid, sliceElement.githash), 1)
-				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_semantic='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.success, "/")+"]", sliceElement.uuid, sliceElement.githash, sliceElement.repo, sliceElement.recordID)
+				logger(fmt.Sprintf("Semantic Judge Finish: %s - %s Semantic failed.",sliceElement.Uuid, sliceElement.Githash), 1)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_semantic='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "1["+strings.Join(sliceElement.Success, "/")+"]", sliceElement.Uuid, sliceElement.Githash, sliceElement.Repo, sliceElement.RecordID)
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic-2]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=4 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=4 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
@@ -169,14 +169,14 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 			}
 			if k == 1 {
 				sliceElement := codegenPool[v2]
-				logger(fmt.Sprintf("Codegen Judge Finish: %s - %s Codegen failed.",sliceElement.uuid, sliceElement.githash), 1)
-				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_codegen ='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "0["+strings.Join(sliceElement.success, "/")+"]["+strings.Join(sliceElement.fail, "/")+"]", sliceElement.uuid, sliceElement.githash, sliceElement.repo, sliceElement.recordID)
+				logger(fmt.Sprintf("Codegen Judge Finish: %s - %s Codegen failed.",sliceElement.Uuid, sliceElement.Githash), 1)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_codegen ='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "0["+strings.Join(sliceElement.Success, "/")+"]["+strings.Join(sliceElement.Fail, "/")+"]", sliceElement.Uuid, sliceElement.Githash, sliceElement.Repo, sliceElement.RecordID)
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Codegen-2]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
@@ -186,14 +186,14 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 			}
 			if k == 2 {
 				sliceElement := optimizePool[v2]
-				logger(fmt.Sprintf("Codegen Judge Finish: %s - %s Codegen failed.",sliceElement.uuid, sliceElement.githash), 1)
-				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_optimize ='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "0["+strings.Join(sliceElement.success, "/")+"]["+strings.Join(sliceElement.fail, "/")+"]", sliceElement.uuid, sliceElement.githash, sliceElement.repo, sliceElement.recordID)
+				logger(fmt.Sprintf("Codegen Judge Finish: %s - %s Codegen failed.",sliceElement.Uuid, sliceElement.Githash), 1)
+				commandStr := fmt.Sprintf("UPDATE JudgeResult SET judge_p_optimize ='%s', judge_p_verdict=0 WHERE (judge_p_useruuid='%s' AND judge_p_githash='%s' AND judge_p_repo='%s' AND judge_p_judgeid='%s')", "0["+strings.Join(sliceElement.Success, "/")+"]["+strings.Join(sliceElement.Fail, "/")+"]", sliceElement.Uuid, sliceElement.Githash, sliceElement.Repo, sliceElement.RecordID)
 				_, err := executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Optimize-2]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.uuid, sliceElement.repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)

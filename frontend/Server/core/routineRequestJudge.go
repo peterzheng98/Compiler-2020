@@ -22,10 +22,10 @@ func reqJudge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var poolElement JudgePoolElement
-	poolElement.repo = record.Repo
-	poolElement.uuid = record.Uuid
-	poolElement.recordID = n.Next()
-	poolElement.build = false
+	poolElement.Repo = record.Repo
+	poolElement.Uuid = record.Uuid
+	poolElement.RecordID = n.Next()
+	poolElement.Build = false
 	var timeUnix = time.Now().Unix()
 	compilePool[fmt.Sprint(timeUnix)] = poolElement
 	logger(fmt.Sprintf("=========================================="), 1)
