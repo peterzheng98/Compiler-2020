@@ -6,9 +6,11 @@
 
 补充3: 评测平台即将上线，链接(`http://compiler.onlinejudge.peterzheng.cn:10567/`)，目前还在调试，调试完成后将会删除目前数据库的内容。
 
-补充4：正式开始后评测时间为每天10：00至22：00，预计开服时间：2020年3月16日。
+补充4：~~正式开始后评测时间为每天10：00至22：00，预计开服时间：2020年3月16日。~~
 
-补充5：（重要）为了减少repo的大小，请参考本页面底部的FAQ-2调用docker内部已有的库，需要的库请联系TA，放入Docker，DDL：3月16日 22：00。
+补充5：~~（重要）为了减少repo的大小，请参考本页面底部的FAQ-2调用docker内部已有的库，需要的库请联系TA，放入Docker，DDL：3月16日 22：00。~~
+
+补充6：由于docker中的一些错误，根目录下的build.sh/semantic.sh/codegen.sh/optimize.sh请分别修改为build.bash/semantic.bash/codegen.bash/optimize.bash。
 
 信息：最新测试集合GitHash `2de6ba373eee38f596186e98d49ab4808eecb379` 最后更新：2020年3月11日
 
@@ -658,7 +660,7 @@ gcc构筑命令：`./configure --prefix=/opt/riscv --with-arch=rv32ima --with-ab
 
 1. 关于提交：
 
-你需要提交一个repo，且repo的根目录中必须包括：build.sh（类似于makefile中的make all的角色），semantic.sh（类似于g++ -fsyntax-only），codegen.sh（类似于g++ xxx.cpp），optimize.sh（类似于g++ xxx.cpp -O2）。
+你需要提交一个repo，且repo的根目录中必须包括：build.bash（类似于makefile中的make all的角色），semantic.bash（类似于g++ -fsyntax-only），codegen.bash（类似于g++ xxx.cpp），optimize.bash（类似于g++ xxx.cpp -O2）。
 
 2. 关于内部已经存储的库：
 
