@@ -152,6 +152,8 @@ if __name__ == '__main__':
                         subtaskResult_dict['testCase'] = subtask_dict['testCase']
                         subtaskResult_dict['judgetype'] = subtask_dict['stage']
                         subtaskResult_dict['uuid'] = subtask_dict['uuid']
+                        subtaskResult_dict['git_hash'] = GitHash
+                        subtaskResult_dict['taskID'] = subtask_dict['taskID']
                         subtaskResult_dict['test_case_id'] = subtask_dict['test_case_id']
                         submitResult_list.append(subtaskResult_dict)
                         genLog(

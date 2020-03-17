@@ -7,7 +7,7 @@ import (
 
 func executionQuery(cmd string) (*sql.Rows, error) {
 	// Execute the query
-	logger(fmt.Sprintf("SQL Query: %s", cmd), 1)
+	//logger(fmt.Sprintf("SQL Query: %s", cmd), 1)
 	result, err := db.Query(cmd)
 	if err != nil {
 		logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 0)
@@ -21,7 +21,7 @@ func executionQuery(cmd string) (*sql.Rows, error) {
 }
 
 func executionExec(cmd string) (sql.Result, error) {
-	logger(fmt.Sprintf("SQL Execution: %s", cmd), 1)
+	//logger(fmt.Sprintf("SQL Execution: %s", cmd), 1)
 	result, err := db.Exec(cmd)
 	if err != nil {
 		logger(fmt.Sprintf("SQL Runtime error: %s", err.Error()), 0)

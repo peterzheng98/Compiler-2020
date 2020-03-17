@@ -14,8 +14,6 @@ if __name__ == '__main__':
     # for semantic
     bar = tqdm(desc='Progress', total=len(files_all))
     for file in files_all:
-        if 'basic-11' in file:
-            print('111')
         if '/' in file:
             real_file = file.split('/')[-1]
         else:

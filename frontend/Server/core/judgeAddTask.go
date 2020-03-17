@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func addOptimize(uuid string, repo string) {
+func addOptimize(uuid string, repo string, recordID string) {
 	element := JudgePoolElement{
 		Uuid:       uuid,
 		Repo:       repo,
@@ -12,6 +12,7 @@ func addOptimize(uuid string, repo string) {
 		Running:    make([]string, 0),
 		RunningSet: make(map[string]bool),
 		Total:      0,
+		RecordID:   recordID,
 	}
 	result, err := executionQuery("SELECT optim_uid FROM dataset_optimize")
 	if result == nil {
@@ -31,7 +32,7 @@ func addOptimize(uuid string, repo string) {
 	optimizePool = append(optimizePool, element)
 }
 
-func addCodegen(uuid string, repo string) {
+func addCodegen(uuid string, repo string, recordID string) {
 	element := JudgePoolElement{
 		Uuid:       uuid,
 		Repo:       repo,
@@ -41,6 +42,7 @@ func addCodegen(uuid string, repo string) {
 		Running:    make([]string, 0),
 		RunningSet: make(map[string]bool),
 		Total:      0,
+		RecordID:   recordID,
 	}
 	result, err := executionQuery("SELECT cg_uid FROM dataset_codegen")
 	if result == nil {

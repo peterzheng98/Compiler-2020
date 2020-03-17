@@ -101,13 +101,13 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  stu_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
-				addCodegen(sliceElement.Uuid, sliceElement.Repo)
+				addCodegen(sliceElement.Uuid, sliceElement.Repo, sliceElement.RecordID)
 				semanticPool = append(semanticPool[0:v2], semanticPool[v2+1:]...)
 			}
 			if k == 1 {
@@ -119,13 +119,13 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Codegen]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  stu_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
 					continue
 				}
-				addOptimize(sliceElement.Uuid, sliceElement.Repo)
+				addOptimize(sliceElement.Uuid, sliceElement.Repo, sliceElement.RecordID)
 				codegenPool = append(codegenPool[0:v2], codegenPool[v2+1:]...)
 			}
 			if k == 2 {
@@ -137,7 +137,7 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Optimize]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=7 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=7 WHERE (stu_uuid='%s' AND  stu_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
@@ -159,7 +159,7 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Semantic-2]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=4 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=4 WHERE (stu_uuid='%s' AND stu_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
@@ -176,7 +176,7 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Codegen-2]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=5 WHERE (stu_uuid='%s' AND  stu_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)
@@ -193,7 +193,7 @@ func submitTask(w http.ResponseWriter, r *http.Request) {
 					logger(fmt.Sprintf("Runtime error[Optimize-2]: %s", err.Error()), 1)
 					continue
 				}
-				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  judge_p_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
+				commandStr = fmt.Sprintf("UPDATE userDatabase SET stu_judge_status=6 WHERE (stu_uuid='%s' AND  stu_repo='%s')", sliceElement.Uuid, sliceElement.Repo)
 				_, err = executionExec(commandStr)
 				if err != nil {
 					logger(fmt.Sprintf("Runtime error[Semantic]: %s", err.Error()), 1)

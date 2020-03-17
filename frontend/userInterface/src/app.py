@@ -222,15 +222,15 @@ def show_server_status_semantic():
         d_list = json.loads(r.json()['message']['semantic'])
         for cnt, d in enumerate(d_list):
             cell_content = '<td>&nbsp;&nbsp;{}&nbsp;&nbsp;</td>'
-            pass_list = [i.split('_')[0] for i in d['success']]
-            fail_list = [i.split('_')[0] for i in d['fail']]
+            pass_list = [i.split('_')[0] for i in d['success']] if d['success'] is not None else []
+            fail_list = [i.split('_')[0] for i in d['fail']] if d['fail'] is not None else []
             cell_list = [
                 '<tr>',
                 cell_content.format(cnt),
                 cell_content.format(d['uuid'][1:]),
                 cell_content.format(d['repo']),
                 cell_content.format(d['githash']),
-                cell_content.format('Passed: {} / Failed: {} / Remaining: {}'.format(len(pass_list), len(fail_list), len(d['pending']))),
+                cell_content.format('Passed: {} / Failed: {} / Running: {} / Pending: {}'.format(len(pass_list), len(fail_list), len(d['running_set']), len(d['pending']) - len(d['running_set']))),
                 '</tr>'
             ]
             table_cell.append(''.join(cell_list))
