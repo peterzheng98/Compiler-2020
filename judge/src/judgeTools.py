@@ -18,13 +18,14 @@ def judgeSemantic(taskDict: dict):
     uuid, imageName, sourceCode, assertion = taskDict['uuid'], taskDict['imagename'], taskDict['inputSourceCode'], \
                                              taskDict['assertion']
     timeLimit, memoryLimit = taskDict['timeLimit'], taskDict['memoryLimit']
+    sourceCode = base64.b64decode(sourceCode.encode()).decode()
     container = None
     try:
         # Find the image and try to start the image
         start_time = time.time()
         path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
         open(os.path.join(path_prefix, 'judgeSemantic.bash'), 'w').write(
-            'cat /judgeData/testdata.txt | bash /compiler/semantic.sh')
+            'cat /judgeData/testdata.txt | bash /compiler/semantic.bash')
         open(os.path.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
         container = C.containers.run(
             image=imageName,
@@ -35,7 +36,7 @@ def judgeSemantic(taskDict: dict):
                 os.path.join(Config_Dict['compilerPath'], 'judgeData'): {
                     'bind': '/judgeData', 'mode': 'ro'
                 }
-            }, cpu_period=100000, cpu_quota=100000, network_mode='none'
+            }, cpu_period=100000, cpu_quota=400000, network_mode='none'
         )
         container_running_result = container.wait(timeout=timeLimit)
         time_interval = time.time() - start_time

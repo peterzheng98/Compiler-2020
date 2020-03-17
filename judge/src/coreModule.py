@@ -83,7 +83,7 @@ def build_compiler(config_dict: dict):
             _t.wait(10)
             with open(Config_Dict['compilerPath'] + '/temp/Dockerfile', 'w') as f:
                 f.write(
-                    'FROM %s\nADD * /compiler/\nWORKDIR /compiler\nRUN bash /compiler/build.sh' % (
+                    'FROM %s\nADD * /compiler/\nWORKDIR /compiler\nRUN bash /compiler/build.bash' % (
                             Config_Dict['dockerprefix'] + 'base'))
             dockerProcess = subprocess.Popen(['docker', 'build', '-t', imageName, '.'],
                                              cwd=os.path.join(Config_Dict['compilerPath'], 'temp'),
