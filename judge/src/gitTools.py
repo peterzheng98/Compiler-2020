@@ -11,7 +11,7 @@ def updateRepo(userCompilerLocalPath: str, lastHash: tuple, repoPath: str, uuid:
     if lastHash[0] != 1:  # no previous build or error occurred
         cmd = 'rm -rf * && rm -rf .git && git clone {} .'.format(repoPath)
     else:
-        cmd = 'git pull'
+        cmd = 'rm -rf * && rm -rf .git && git clone {} .'.format(repoPath)
     try:
         commandResult = subprocess.Popen(cmd, cwd=userCompilerLocalPath, stderr=subprocess.STDOUT,
                                          stdout=subprocess.PIPE, shell=True)
