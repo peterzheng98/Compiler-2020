@@ -5,6 +5,7 @@ import requests
 import time
 import os
 import base64
+import subprocess
 
 
 def judgeSemantic(taskDict: dict):
@@ -86,3 +87,68 @@ def judgeCodeGen(taskDict: dict):
     """
     # Here wait for matching
     return '2', 'Under development', -1, -1
+
+
+def judgeSemantic_local_adapter(taskDict: dict):
+    uuid, imageName, sourceCode, assertion = taskDict['uuid'], taskDict['imagename'], taskDict['inputSourceCode'], \
+                                             taskDict['assertion']
+    timeLimit, memoryLimit = taskDict['timeLimit'], taskDict['memoryLimit']
+    sourceCode = base64.b64decode(sourceCode.encode()).decode()
+    userCompilerPath = Config_Dict['compilerPath'] + '/' + uuid
+    process = None
+    try:
+        # Find the image and try to start the image
+        start_time = time.time()
+        path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
+        open(os.path.join(path_prefix, 'judgeSemantic.bash'), 'w').write(
+            'cat {} | bash {}/semantic.bash'.format(os.path.join(os.path.join(Config_Dict['compilerPath'], 'judgeData'), 'testdata.txt'), userCompilerPath))
+        open(os.path.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
+        process = subprocess.Popen(['bash', 'judgeSemantic.bash'], cwd=path_prefix, stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+        try:
+            process.wait(timeLimit)
+            time_interval = time.time() - start_time
+            stdout_result = process.stdout.readlines()
+            stderr_result = process.stderr.readlines()
+            stdout_result_str = ''.join([i.decode() for i in stdout_result])
+            stderr_result_str = ''.join([i.decode() for i in stderr_result])
+            expectedResult = True if assertion == '1' else False
+
+            if process.returncode == 0 and expectedResult:
+                return_mess = ('==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+                    process.returncode, stdout_result_str[0:Config_Dict['MaxlogSize']],
+                    stderr_result_str[0:Config_Dict['MaxlogSize']]
+                )).encode()
+                return '0', base64.b64encode(return_mess).decode(), time_interval
+
+            elif process.returncode != 0 and (not expectedResult):
+                return_mess = ('==Verdict==\nAccepted\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+                    process.returncode, stdout_result_str[0:Config_Dict['MaxlogSize']],
+                    stderr_result_str[0:Config_Dict['MaxlogSize']]
+                )).encode()
+                return '0', base64.b64encode(return_mess).decode(), time_interval
+            else:
+                return_mess = ('==Verdict==\nFailed\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+                    process.returncode, stdout_result_str[0:Config_Dict['MaxlogSize']],
+                    stderr_result_str[0:Config_Dict['MaxlogSize']]
+                )).encode()
+                return '1', base64.b64encode(return_mess).decode(), time_interval
+            pass
+        except subprocess.TimeoutExpired:
+
+            try:
+                process.kill()
+            except Exception:
+                pass
+            pass
+            return_mess = ('==Verdict==\nTimeout\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+                process.returncode, '', ''
+            )).encode()
+            return '1', base64.b64encode(return_mess).decode(), timeLimit
+        except Exception as identifier:
+            return_mess = ('==Verdict==\nRuntime Error\n==Exit Code==\n{}\n==Stdout==\n{}\n==Stderr==\n{}\n'.format(
+                process.returncode, '', ''
+            )).encode()
+            return '1', base64.b64encode(return_mess).decode(), -1
+    except Exception as identifier:
+        return '2', 'Unknown error occurred, {}'.format(identifier), timeLimit
