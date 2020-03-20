@@ -2,7 +2,7 @@ from ConfigDeploy import Config_Dict
 from initalSet import initDatabase
 from validityCheck import checkValidWorkList, checkSemanticValidity, checkCodegenValidity
 from dockerTools import existImage, cleanDocker, makeContainer, C
-from judgeTools import judgeSemantic, judgeCodeGen
+from judgeTools import judgeSemantic, judgeCodeGen, judgeSemantic_local_adapter
 from gitTools import updateRepo, getGitHash, fetchGitCommit
 import sys
 import docker
@@ -14,7 +14,7 @@ import shutil
 import time
 import subprocess
 
-from coreModule import build_compiler, build_compiler_local
+from coreModule import build_compiler, build_compiler_local, build_compiler_local_adapter
 
 localdataVersion = None
 original_user = []
@@ -63,7 +63,7 @@ if __name__ == '__main__':
             if build_task_Dict['code'] == 200:
                 genLog('Build Task received: {}'.format(build_task_Dict['message']))
                 build_task = build_task_Dict['message']
-                verdict, GitHash, GitCommit, BuildMessage, useless = build_compiler(build_task)
+                verdict, GitHash, GitCommit, BuildMessage, useless = build_compiler_local_adapter(build_task)
                 build_task['verdict'] = verdict
                 build_task['gitHash'] = GitHash
                 build_task['gitCommit'] = GitCommit
@@ -114,7 +114,7 @@ if __name__ == '__main__':
                             continue
                         judgeResult = ['', '']
                         subtask_dict['imagename'] = imageName
-                        judgeResult[0], judgeResult[1], time_interval = judgeSemantic(subtask_dict)
+                        judgeResult[0], judgeResult[1], time_interval = judgeSemantic_local_adapter(subtask_dict)
                         subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']
                         subtaskResult_dict['JudgeResult'] = judgeResult
                         subtaskResult_dict['Judger'] = Config_Dict['judgerName']
