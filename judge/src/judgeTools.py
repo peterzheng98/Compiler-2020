@@ -94,13 +94,16 @@ def judgeCodeGen(taskDict: dict):
     memoryLimit = taskDict['memoryLimit']
     uuid, imageName = taskDict['uuid'], taskDict['imagename']
     userCompilerPath = Config_Dict['compilerPath'] + '/' + uuid
-    textMessage = 'Start Judge:\n--> Stage 1: Compile the program\n{}\n'.format('-' * 30)
+    textMessage = 'Start Judge:\n--> Stage 1: Compile the program\nStart Time:{}\n{}\n'.format(
+        time.strftime('%Y.%m.%d %H:%M:%S',time.localtime(time.time())),
+        '-' * 30
+    )
+    path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
     user_generated_output = ''
     # Stage 1: Compile the program.
     try:
         # Find the image and try to start the image
         start_time = time.time()
-        path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
         open(os.path.join(path_prefix, 'judgeCodegen.bash'), 'w').write(
             'cat {} | bash {}/codegen.bash'.format(
                 os.path.join(os.path.join(Config_Dict['compilerPath'], 'judgeData'), 'testdata.txt'), userCompilerPath))
@@ -116,11 +119,11 @@ def judgeCodeGen(taskDict: dict):
             stderr_result_str = ''.join([i.decode() for i in stderr_result])
 
             if process.returncode == 0:
-                textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format(
+                textMessage = textMessage + '==Compile Stderr==\n{}\n==> Pass Compiling\n{}'.format(
                     stderr_result_str[0:Config_Dict['MaxlogSize']], '-' * 30)
                 user_generated_output = stdout_result_str
             else:
-                textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format(
+                textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format(
                     stderr_result_str[0:Config_Dict['MaxlogSize']], 'Compiling returned non-zero value')
                 return '1', base64.b64encode(textMessage).decode(), time_interval, timeLimit
         except subprocess.TimeoutExpired:
@@ -129,12 +132,57 @@ def judgeCodeGen(taskDict: dict):
             except Exception:
                 pass
             pass
-            textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format('', 'Compiling Time out')
+            textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format('', 'Compiling Time out')
             return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
         except Exception as identifier:
-            textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format('', 'Compiler Crash')
+            textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format('', 'Compiler Crash')
             return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
     except Exception as identifier:
+        return '1', base64.b64encode(
+            textMessage + 'Unknown error occurred, {}'.format(identifier)).decode(), timeLimit, timeLimit
+
+    # Stage 2: Check the generated output is valid
+    textMessage = textMessage + '--> Stage 2: Validate the output assembly\nStart Time:{}\n{}\n'.format(
+        time.strftime('%Y.%m.%d %H:%M:%S',time.localtime(time.time())),
+        '-' * 30
+    )
+    try:
+        open(os.path.join(path_prefix, 'src_code.s'), 'w').write(user_generated_output)
+        process = subprocess.Popen(
+            ['clang-9', '--target=riscv32', '-march=rv32ima', 'src_code.s', '-c'], cwd=path_prefix,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False
+        )
+        try:
+            process.wait(15)
+            stdout_result = process.stdout.readlines()
+            stderr_result = process.stderr.readlines()
+            stdout_result_str = ''.join([i.decode() for i in stdout_result])
+            stderr_result_str = ''.join([i.decode() for i in stderr_result])
+
+            if process.returncode == 0:
+                textMessage = textMessage + '==Validation Stdout==\n{}\n==Validation Stderr==\n{}\n==> Pass Validation\n{}'.format(
+                    stdout_result_str[0:Config_Dict['MaxlogSize']],
+                    stderr_result_str[0:Config_Dict['MaxlogSize']],
+                    '-' * 30
+                )
+            else:
+                textMessage = textMessage + '==Validation Stdout==\n{}\n==Validation Stderr==\n{}\n==> Validation Failed'.format(
+                    stdout_result_str[0:Config_Dict['MaxlogSize']],
+                    stderr_result_str[0:Config_Dict['MaxlogSize']]
+                )
+                return '1', base64.b64encode(textMessage).decode(), time_interval, timeLimit
+        except subprocess.TimeoutExpired:
+            try:
+                process.kill()
+            except Exception:
+                pass
+            pass
+            textMessage = textMessage + '==> {}'.format('Validation Time out')
+            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+        except Exception as identifier:
+            textMessage = textMessage + '==> {}'.format('Validator Crash')
+            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+    except Exception as identifer:
         return '1', base64.b64encode(
             textMessage + 'Unknown error occurred, {}'.format(identifier)).decode(), timeLimit, timeLimit
 
