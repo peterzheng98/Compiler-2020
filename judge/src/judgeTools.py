@@ -100,6 +100,7 @@ def judgeCodeGen(taskDict: dict):
     )
     path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
     user_generated_output = ''
+    compile_time_interval = 0
     # Stage 1: Compile the program.
     try:
         # Find the image and try to start the image
@@ -113,6 +114,7 @@ def judgeCodeGen(taskDict: dict):
         try:
             process.wait(15)
             time_interval = time.time() - start_time
+            compile_time_interval = time_interval
             stdout_result = process.stdout.readlines()
             stderr_result = process.stderr.readlines()
             stdout_result_str = ''.join([i.decode() for i in stdout_result])
@@ -133,17 +135,17 @@ def judgeCodeGen(taskDict: dict):
                 pass
             pass
             textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format('', 'Compiling Time out')
-            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
         except Exception as identifier:
             textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format('', 'Compiler Crash')
-            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
     except Exception as identifier:
         return '1', base64.b64encode(
-            textMessage + 'Unknown error occurred, {}'.format(identifier)).decode(), timeLimit, timeLimit
+            textMessage + 'Unknown error occurred, {}'.format(identifier)).decode(), -1, timeLimit
 
     # Stage 2: Check the generated output is valid
     textMessage = textMessage + '--> Stage 2: Validate the output assembly\nStart Time:{}\n{}\n'.format(
-        time.strftime('%Y.%m.%d %H:%M:%S',time.localtime(time.time())),
+        time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time())),
         '-' * 30
     )
     try:
@@ -178,16 +180,90 @@ def judgeCodeGen(taskDict: dict):
                 pass
             pass
             textMessage = textMessage + '==> {}'.format('Validation Time out')
-            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
         except Exception as identifier:
             textMessage = textMessage + '==> {}'.format('Validator Crash')
-            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
     except Exception as identifer:
         return '1', base64.b64encode(
-            textMessage + 'Unknown error occurred, {}'.format(identifier)).decode(), timeLimit, timeLimit
+            textMessage + 'Unknown error occurred, {}'.format(identifer)).decode(), -1, timeLimit
 
+    # Stage 3: Send the message into ravel.
+    textMessage = textMessage + '--> Stage 3: Run Simulator\nStart Time:{}\n{}\n'.format(
+        time.strftime('%Y.%m.%d %H:%M:%S',time.localtime(time.time())),
+        '-' * 30
+    )
+    ravel_prefix = Config_Dict['RavelPath']
+    ravel_executable = Config_Dict['RavelExecutable']
+    open(os.path.join(ravel_prefix, 'test.s'), 'w').write(user_generated_output)
+    open(os.path.join(ravel_prefix, 'builtin.s'), 'w').write(
+        ''.join(open(os.path.join(userCompilerPath, 'builtin.s'), 'r').readlines())
+    )
+    open(os.path.join(ravel_prefix, 'test.in'), 'w').write(inputContent)
+    open(os.path.join(ravel_prefix, 'test.out'), 'w').write(' ')
+    report_list = []
+    report_key_dict = {}
+    try:
+        process = subprocess.Popen(
+            [ravel_executable, '--oj-mode'], cwd=ravel_prefix,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False
+        )
+        try:
+            process.wait(30)
+            stdout_result = process.stdout.readlines()
+            stderr_result = process.stderr.readlines()
+            report_list = [i.decode() for i in stdout_result]
+            key_list = [i.split(':') for i in report_list[:3]]
+            report_key_dict = {i[0]: int(i[1]) for i in key_list}
+            stdout_result_str = ''.join([i.decode() for i in stdout_result])
+            stderr_result_str = ''.join([i.decode() for i in stderr_result])
 
-    return '2', 'Under development', -1, -1
+            if process.returncode == 0:
+                textMessage = textMessage + '==Report==\n{}\n==Simulator Stderr==\n{}\n==> Test Finished\n{}'.format(
+                    stdout_result_str[0:Config_Dict['MaxlogSize']],
+                    stderr_result_str[0:Config_Dict['MaxlogSize']],
+                    '-' * 30
+                )
+            else:
+                textMessage = textMessage + '==Report==\n{}\n==Simulator Stderr==\n{}\n==> Runtime error'.format(
+                    stdout_result_str[0:Config_Dict['MaxlogSize']],
+                    stderr_result_str[0:Config_Dict['MaxlogSize']]
+                )
+                return '1', base64.b64encode(textMessage).decode(), time_interval, timeLimit
+        except subprocess.TimeoutExpired:
+            try:
+                process.kill()
+            except Exception:
+                pass
+            pass
+            textMessage = textMessage + '==> {}'.format('Validation Time out')
+            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+        except Exception as identifier:
+            textMessage = textMessage + '==> {}'.format('Validator Crash')
+            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+    except Exception as identifer:
+        return '1', base64.b64encode(
+            textMessage + 'Unknown error occurred, {}'.format(identifer)).decode(), -1, timeLimit
+    textMessage = textMessage + '--> Judger: Judging\nStart Time:{}\n{}\n'.format(
+        time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time())),
+        '-' * 30
+    )
+    user_data_output = ''.join(open(os.path.join(ravel_prefix, 'test.out'), 'r').readlines())
+    exit_code = report_key_dict['exit code']
+    instruction = report_key_dict['time']
+    if user_data_output != outputContent:
+        textMessage = textMessage + "==Output: Failed=="
+        return '1', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
+    textMessage = textMessage + "==Output: Passed==\n"
+    if exit_code != int(outputCode):
+        textMessage = textMessage + "==Exit code: Failed=="
+        return '1', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
+    textMessage = textMessage + "==Exit code: Passed==\n"
+    if instruction > timeLimit:
+        textMessage = textMessage + "==Runtime: Failed(Timeout)=="
+        return '1', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
+    textMessage = textMessage + "==Runtime: Passed=="
+    return '0', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
 
 
 def judgeSemantic_local_adapter(taskDict: dict):

@@ -19,5 +19,7 @@ Config_Dict = {
     "compilerPath" : "/home/judge/compiler",
     "compilerBackupPath": "/home/judge/compiler_backup",
     "GitTimeout": 30,
-    "MaxlogSize": 4096
+    "MaxlogSize": 4096,
+    "RavelExecutable" : "/home/judge/ravel/bin/ravel",
+    "RavelPath": "/home/judge/ravel/bin"
 }
