@@ -86,6 +86,59 @@ def judgeCodeGen(taskDict: dict):
     2 for Runtime Error. tuple[1] for message. 3 for Timeout
     """
     # Here wait for matching
+    inputSrcCode = base64.b64decode(taskDict['inputSourceCode'].encode()).decode()
+    inputContent = base64.b64decode(taskDict['inputContent'].encode()).decode()
+    outputCode = base64.b64decode(taskDict['outputCode'].encode()).decode()
+    outputContent = base64.b64decode(taskDict['outputContent'].encode()).decode()
+    timeLimit = taskDict['timeLimit']
+    memoryLimit = taskDict['memoryLimit']
+    uuid, imageName = taskDict['uuid'], taskDict['imagename']
+    userCompilerPath = Config_Dict['compilerPath'] + '/' + uuid
+    textMessage = 'Start Judge:\n--> Stage 1: Compile the program\n{}\n'.format('-' * 30)
+    user_generated_output = ''
+    # Stage 1: Compile the program.
+    try:
+        # Find the image and try to start the image
+        start_time = time.time()
+        path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
+        open(os.path.join(path_prefix, 'judgeCodegen.bash'), 'w').write(
+            'cat {} | bash {}/codegen.bash'.format(
+                os.path.join(os.path.join(Config_Dict['compilerPath'], 'judgeData'), 'testdata.txt'), userCompilerPath))
+        open(os.path.join(path_prefix, 'testdata.txt'), 'w').write(inputSrcCode)
+        process = subprocess.Popen(['bash', 'judgeCodegen.bash'], cwd=path_prefix, stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+        try:
+            process.wait(15)
+            time_interval = time.time() - start_time
+            stdout_result = process.stdout.readlines()
+            stderr_result = process.stderr.readlines()
+            stdout_result_str = ''.join([i.decode() for i in stdout_result])
+            stderr_result_str = ''.join([i.decode() for i in stderr_result])
+
+            if process.returncode == 0:
+                textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format(
+                    stderr_result_str[0:Config_Dict['MaxlogSize']], '-' * 30)
+                user_generated_output = stdout_result_str
+            else:
+                textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format(
+                    stderr_result_str[0:Config_Dict['MaxlogSize']], 'Compiling returned non-zero value')
+                return '1', base64.b64encode(textMessage).decode(), time_interval, timeLimit
+        except subprocess.TimeoutExpired:
+            try:
+                process.kill()
+            except Exception:
+                pass
+            pass
+            textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format('', 'Compiling Time out')
+            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+        except Exception as identifier:
+            textMessage = textMessage + '==Compile Stderr==\n{}\n{}'.format('', 'Compiler Crash')
+            return '1', base64.b64encode(textMessage).decode(), timeLimit, timeLimit
+    except Exception as identifier:
+        return '1', base64.b64encode(
+            textMessage + 'Unknown error occurred, {}'.format(identifier)).decode(), timeLimit, timeLimit
+
+
     return '2', 'Under development', -1, -1
 
 
@@ -101,7 +154,8 @@ def judgeSemantic_local_adapter(taskDict: dict):
         start_time = time.time()
         path_prefix = os.path.join(Config_Dict['compilerPath'], 'judgeData')
         open(os.path.join(path_prefix, 'judgeSemantic.bash'), 'w').write(
-            'cat {} | bash {}/semantic.bash'.format(os.path.join(os.path.join(Config_Dict['compilerPath'], 'judgeData'), 'testdata.txt'), userCompilerPath))
+            'cat {} | bash {}/semantic.bash'.format(
+                os.path.join(os.path.join(Config_Dict['compilerPath'], 'judgeData'), 'testdata.txt'), userCompilerPath))
         open(os.path.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
         process = subprocess.Popen(['bash', 'judgeSemantic.bash'], cwd=path_prefix, stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)

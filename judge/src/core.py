@@ -141,7 +141,7 @@ if __name__ == '__main__':
                         if not checkResult:
                             genLog('(checkCodegenValidity Failed) subWorkId:{}'.format(subtask_dict['subWorkId']))
                             continue
-                        judgeResult = ('', '')
+                        judgeResult = ['', '']
                         judgeResult[0], judgeResult[1], time_interval, execution_cycle = judgeCodeGen(subtask_dict)
                         subtaskResult_dict['subWorkId'] = subtask_dict['subWorkId']
                         subtaskResult_dict['JudgeResult'] = judgeResult
