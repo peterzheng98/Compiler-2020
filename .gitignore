@@ -2,6 +2,8 @@
 .DS_Store
 testcases
 testsets/
+.idea/
+.vscode/
 # Prerequisites
 *.d
 
