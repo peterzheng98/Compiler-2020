@@ -9,6 +9,7 @@ import json
 import sys
 import time
 import ansiconv
+import subprocess
 
 from forms import LoginForm, RegistrationForm
 from tools import validator, gitTools
@@ -167,10 +168,38 @@ def judge_detail(judgeid: str, judgepid: str):
                                prev_page=0)
 
 
+def getSystemStatus():
+    return_list = []
+    command = [
+        ('Server Name', ['uname','-n']), ('Kernel Release', ['uname', '-r']), ('Kernel Version', ['uname', '-v'])
+    ]
+    for i in command:
+        try:
+            r = subprocess.check_output(i[1], timeout=1)
+            return_list.append([i[0], r.decode()])
+        except Exception:
+            return_list.append([i[0], 'N/A'])
+    return_list.append(['NeoFetch Information', ' '])
+    try:
+        r = subprocess.check_output(['neofetch', '--stdout'], timeout=1)
+        r = r.decode().strip().split('\n')[2:-1]
+        r = [i.split(':') for i in r]
+        return_list = return_list + r
+    except Exception:
+        return_list.append(['Neofetch info', 'N/A'])
+    return return_list
+
+
+
 @app.route('/status')
 @login_required
 def show_server_status():
-    return render_template('server_status.html', webconfig={'title': 'Server Status - Compiler 2020'})
+    sys_header = ['Key','Value']
+    sys_content = getSystemStatus()
+    return render_template(
+        'server_status.html', webconfig={'title': 'Server Status - Compiler 2020'},
+        sys_table_header = sys_header, sys_table_content=sys_content
+    )
 
 
 @app.route('/status/compile')
