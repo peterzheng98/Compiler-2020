@@ -8,6 +8,7 @@ import base64
 import json
 import sys
 import time
+import ansiconv
 
 from forms import LoginForm, RegistrationForm
 from tools import validator, gitTools
@@ -37,11 +38,13 @@ def load_user(stu_id):
 
 @app.route('/base64/detail/<string:raw_id_1>/<string:raw_id_2>')
 def base64_decode(raw_id_1, raw_id_2):
-    std_str = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css"><style>.code-font-medium {font-family: \'Fira Code\', monospace;font-size: medium;}</style></head>'
+    std_str = '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css"><style>.code-font-medium {font-family: \'Fira Code\', monospace;font-size: medium;}</style><style>'
     try:
-        return '{}<body class="code-font-medium">{}</body></html>'.format(std_str, base64.b64decode((''.join(
-            open('static/datalogs/{}_{}.txt'.format(raw_id_1, raw_id_2), 'r').readlines())).encode()).decode().replace(
-            '\n', '<br>').replace(' ', '&nbsp;'))
+        str_raw_html = base64.b64decode((''.join(open('static/datalogs/{}_{}.txt'.format(raw_id_1, raw_id_2), 'r').readlines())).encode()).decode().replace('\n', '<br>')
+        html_conv = ansiconv.to_html(str_raw_html).replace('ansi37', '')
+        str_html = '<body class="code-font-medium">{}</body></html>'.format(html_conv)
+        st_css = ansiconv.base_css()
+        return std_str + st_css + '</style></head>' + str_html
     except Exception as ident:
         return 'Error occurred. {}'.format(ident)
 
@@ -105,7 +108,6 @@ def judge_detail(judgeid: str, judgepid: str):
             'repo': '123'
         }
         r2 = HTTPReq.post(path.fetchJudgeResultDetail, timeout=5, data=json.dumps(dat2))
-        print('==>{}'.format(r2.json()))
         record_list = []
         if r2.json()['code'] != 200 or r2.json()['message'] is None:
             record_list = []
@@ -118,7 +120,7 @@ def judge_detail(judgeid: str, judgepid: str):
                 sub_list = [
                     (std_font_attr, aref, Idx),
                     (std_font_attr, '', '1-Semantic' if D[0] == '1' else '2-Codegen' if D[0] == '2' else '3-Optimize' if
-                    D[0] == '3' else 'Unknown'),
+                                                         D[0] == '3' else 'Unknown'),
                     (std_font_attr, '', D[1])
                 ]
                 if D[2][0] == '0':
@@ -153,8 +155,7 @@ def judge_detail(judgeid: str, judgepid: str):
                                record_list=record_list,
                                judge_list=judge_list,
                                prev_page=0,
-                               builtMessage=base64.b64decode(
-                                   r.json()['message']['buildMessage'].encode()).decode().replace('\\n', '\n'))
+                               builtMessage=base64.b64decode(r.json()['message']['buildMessage'].encode()).decode().replace('\\n', '\n'))
     except Exception as identifier:
         return render_template('judge_detail.html',
                                webconfig={'title': 'Details for #{} - Compiler 2020'.format(judgeid)},
@@ -220,6 +221,7 @@ def show_server_status_semantic():
         table_content = '<tbody>{}</tbody>'
         table_cell = []
         d_list = json.loads(r.json()['message']['semantic'])
+        json.dump(r.json(), open('rmp.json', 'w'), ensure_ascii=False)
         for cnt, d in enumerate(d_list):
             cell_content = '<td>&nbsp;&nbsp;{}&nbsp;&nbsp;</td>'
             pass_list = [i.split('_')[0] for i in d['success']] if d['success'] is not None else []
@@ -230,7 +232,7 @@ def show_server_status_semantic():
                 cell_content.format(d['uuid'][1:]),
                 cell_content.format(d['repo']),
                 cell_content.format(d['githash']),
-                cell_content.format('Passed: {} / Failed: {} / Running: {} / Pending: {}'.format(len(pass_list), len(fail_list), len(d['running_set']), len(d['pending']) - len(d['running_set']))),
+                cell_content.format('Passed: {} / Failed: {} / Running: {} / Pending: {}'.format(len(pass_list), len(fail_list), len(d['running_set']), len(d['pending']))),
                 '</tr>'
             ]
             table_cell.append(''.join(cell_list))

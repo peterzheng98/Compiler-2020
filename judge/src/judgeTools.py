@@ -87,9 +87,9 @@ def judgeCodeGen(taskDict: dict):
     """
     # Here wait for matching
     inputSrcCode = base64.b64decode(taskDict['inputSourceCode'].encode()).decode()
-    inputContent = base64.b64decode(taskDict['inputContent'].encode()).decode()
-    outputCode = base64.b64decode(taskDict['outputCode'].encode()).decode()
-    outputContent = base64.b64decode(taskDict['outputContent'].encode()).decode()
+    inputContent = base64.b64decode(taskDict['inputContent'].encode()).decode() if taskDict['inputContent'] != '<nil>' else ''
+    outputCode = taskDict['outputCode']
+    outputContent = base64.b64decode(taskDict['outputContent'].encode()).decode() if taskDict['outputContent'] != '<nil>' else ''
     timeLimit = taskDict['timeLimit']
     memoryLimit = taskDict['memoryLimit']
     uuid, imageName = taskDict['uuid'], taskDict['imagename']
@@ -127,7 +127,7 @@ def judgeCodeGen(taskDict: dict):
             else:
                 textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format(
                     stderr_result_str[0:Config_Dict['MaxlogSize']], 'Compiling returned non-zero value')
-                return '1', base64.b64encode(textMessage).decode(), time_interval, timeLimit
+                return '1', base64.b64encode(textMessage.encode()).decode(), time_interval, timeLimit
         except subprocess.TimeoutExpired:
             try:
                 process.kill()
@@ -135,16 +135,16 @@ def judgeCodeGen(taskDict: dict):
                 pass
             pass
             textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format('', 'Compiling Time out')
-            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+            return '1', base64.b64encode(textMessage.encode()).decode(), -1, timeLimit
         except Exception as identifier:
             textMessage = textMessage + '==Compile Stderr==\n{}\n==> {}'.format('', 'Compiler Crash')
-            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+            return '1', base64.b64encode(textMessage.encode()).decode(), -1, timeLimit
     except Exception as identifier:
-        return '1', base64.b64encode(
-            textMessage + 'Unknown error occurred, {}'.format(identifier)).decode(), -1, timeLimit
+        return '1', base64.b64encode((
+            textMessage + 'Unknown error occurred, {}'.format(identifier)).encode()).decode(), -1, timeLimit
 
     # Stage 2: Check the generated output is valid
-    textMessage = textMessage + '--> Stage 2: Validate the output assembly\nStart Time:{}\n{}\n'.format(
+    textMessage = textMessage + '\n--> Stage 2: Validate the output assembly\nStart Time:{}\n{}\n'.format(
         time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time())),
         '-' * 30
     )
@@ -172,7 +172,7 @@ def judgeCodeGen(taskDict: dict):
                     stdout_result_str[0:Config_Dict['MaxlogSize']],
                     stderr_result_str[0:Config_Dict['MaxlogSize']]
                 )
-                return '1', base64.b64encode(textMessage).decode(), time_interval, timeLimit
+                return '1', base64.b64encode(textMessage.encode()).decode(), time_interval, timeLimit
         except subprocess.TimeoutExpired:
             try:
                 process.kill()
@@ -180,16 +180,16 @@ def judgeCodeGen(taskDict: dict):
                 pass
             pass
             textMessage = textMessage + '==> {}'.format('Validation Time out')
-            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+            return '1', base64.b64encode(textMessage.encode()).decode(), -1, timeLimit
         except Exception as identifier:
             textMessage = textMessage + '==> {}'.format('Validator Crash')
-            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+            return '1', base64.b64encode(textMessage.encode()).decode(), -1, timeLimit
     except Exception as identifer:
-        return '1', base64.b64encode(
-            textMessage + 'Unknown error occurred, {}'.format(identifer)).decode(), -1, timeLimit
+        return '1', base64.b64encode((
+            textMessage + 'Unknown error occurred, {}'.format(identifer)).encode()).decode(), -1, timeLimit
 
     # Stage 3: Send the message into ravel.
-    textMessage = textMessage + '--> Stage 3: Run Simulator\nStart Time:{}\n{}\n'.format(
+    textMessage = textMessage + '\n--> Stage 3: Run Simulator\nStart Time:{}\n{}\n'.format(
         time.strftime('%Y.%m.%d %H:%M:%S',time.localtime(time.time())),
         '-' * 30
     )
@@ -213,7 +213,7 @@ def judgeCodeGen(taskDict: dict):
             stdout_result = process.stdout.readlines()
             stderr_result = process.stderr.readlines()
             report_list = [i.decode() for i in stdout_result]
-            key_list = [i.split(':') for i in report_list[:3]]
+            key_list = [i.split(':') for i in report_list[1:4]]
             report_key_dict = {i[0]: int(i[1]) for i in key_list}
             stdout_result_str = ''.join([i.decode() for i in stdout_result])
             stderr_result_str = ''.join([i.decode() for i in stderr_result])
@@ -229,7 +229,7 @@ def judgeCodeGen(taskDict: dict):
                     stdout_result_str[0:Config_Dict['MaxlogSize']],
                     stderr_result_str[0:Config_Dict['MaxlogSize']]
                 )
-                return '1', base64.b64encode(textMessage).decode(), time_interval, timeLimit
+                return '1', base64.b64encode(textMessage.encode()).decode(), time_interval, timeLimit
         except subprocess.TimeoutExpired:
             try:
                 process.kill()
@@ -237,14 +237,14 @@ def judgeCodeGen(taskDict: dict):
                 pass
             pass
             textMessage = textMessage + '==> {}'.format('Validation Time out')
-            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+            return '1', base64.b64encode(textMessage.encode()).decode(), -1, timeLimit
         except Exception as identifier:
-            textMessage = textMessage + '==> {}'.format('Validator Crash')
-            return '1', base64.b64encode(textMessage).decode(), -1, timeLimit
+            textMessage = textMessage + '==> {}'.format('Validator Crash: {}'.format(identifier))
+            return '1', base64.b64encode(textMessage.encode()).decode(), -1, timeLimit
     except Exception as identifer:
-        return '1', base64.b64encode(
-            textMessage + 'Unknown error occurred, {}'.format(identifer)).decode(), -1, timeLimit
-    textMessage = textMessage + '--> Judger: Judging\nStart Time:{}\n{}\n'.format(
+        return '1', base64.b64encode((
+            textMessage + 'Unknown error occurred, {}'.format(identifer)).encode()).decode(), -1, timeLimit
+    textMessage = textMessage + '\n--> Judger: Judging\nStart Time:{}\n{}\n'.format(
         time.strftime('%Y.%m.%d %H:%M:%S', time.localtime(time.time())),
         '-' * 30
     )
@@ -253,17 +253,17 @@ def judgeCodeGen(taskDict: dict):
     instruction = report_key_dict['time']
     if user_data_output != outputContent:
         textMessage = textMessage + "==Output: Failed=="
-        return '1', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
+        return '1', base64.b64encode(textMessage.encode()).decode(), compile_time_interval, instruction
     textMessage = textMessage + "==Output: Passed==\n"
-    if exit_code != int(outputCode):
+    if int(exit_code) != int(outputCode):
         textMessage = textMessage + "==Exit code: Failed=="
-        return '1', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
+        return '1', base64.b64encode(textMessage.encode()).decode(), compile_time_interval, instruction
     textMessage = textMessage + "==Exit code: Passed==\n"
     if instruction > timeLimit:
         textMessage = textMessage + "==Runtime: Failed(Timeout)=="
-        return '1', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
+        return '1', base64.b64encode(textMessage.encode()).decode(), compile_time_interval, instruction
     textMessage = textMessage + "==Runtime: Passed=="
-    return '0', base64.b64encode(textMessage).decode(), compile_time_interval, instruction
+    return '0', base64.b64encode(textMessage.encode()).decode(), compile_time_interval, instruction
 
 
 def judgeSemantic_local_adapter(taskDict: dict):
@@ -281,7 +281,7 @@ def judgeSemantic_local_adapter(taskDict: dict):
             'cat {} | bash {}/semantic.bash'.format(
                 os.path.join(os.path.join(Config_Dict['compilerPath'], 'judgeData'), 'testdata.txt'), userCompilerPath))
         open(os.path.join(path_prefix, 'testdata.txt'), 'w').write(sourceCode)
-        process = subprocess.Popen(['bash', 'judgeSemantic.bash'], cwd=path_prefix, stdin=subprocess.PIPE,
+        process = subprocess.Popen(['bash', os.path.join(path_prefix, 'judgeSemantic.bash')], cwd=userCompilerPath, stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
         try:
             process.wait(timeLimit)
